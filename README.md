@@ -4,13 +4,7 @@ MediCare360 is a comprehensive, multi-role hospital management web platform engi
 
 ---
 
-## 🎨 Design System & Palette
 
-- **#7B9669 (Sage Green):** Primary accent / interactive states / buttons
-- **#E6E6E6 (Light Gray):** Neutral backgrounds / dividers / borders
-- **#6C8480 (Muted Teal):** Healthcare secondary accent & metrics
-- **#BAC8B1 (Soft Sage):** Soft card panels & hover states
-- **#404E3B (Deep Forest Green):** Deep brand base, sidebar, and typography
 
 ---
 
@@ -44,13 +38,7 @@ npm run build
 
 ---
 
-## 🔑 Default Master Admin Credentials
 
-- **Email:** `admin@medicare360.com`
-- **Password:** `Admin@123`
-- **Role:** `ADMIN`
-
----
 
 ## 🛠️ Tech Stack
 
