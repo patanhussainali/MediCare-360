@@ -45,7 +45,7 @@ backend/
 
 ```bash
 cd backend
-python -m venv venv
+python -m uvicorn app.main:app --reload
 
 # Windows
 venv\Scripts\activate
