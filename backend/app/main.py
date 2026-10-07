@@ -55,9 +55,9 @@ def create_application() -> FastAPI:
             "- 📊 Analytics and Reporting endpoints\n"
             "- 🔔 Notification system\n"
             "- 📋 Audit Logging for all important actions\n\n"
-            "### Default Admin Credentials\n"
-            "- **Email**: `hussainalipatan@gmail.com`\n"
-            "- **Password**: `patan@02`\n"
+            "### Authentication\n"
+            "Use the `/api/v1/auth/login` endpoint with your admin credentials.\n"
+            "Admin accounts are created via environment variables or the `/api/v1/auth/setup-admin` endpoint.\n"
         ),
         version=settings.VERSION,
         openapi_url=f"{settings.API_V1_STR}/openapi.json",

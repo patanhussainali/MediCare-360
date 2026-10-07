@@ -19,46 +19,37 @@ def init_db(db: Session) -> None:
         logger.error(f"Failed to create database tables: {e}", exc_info=True)
         raise e
 
-    # 1. Seed Master Admins
-    admins_to_seed = [
-        {
-            "email": settings.FIRST_SUPERUSER_EMAIL,
-            "password": settings.FIRST_SUPERUSER_PASSWORD,
-            "full_name": settings.FIRST_SUPERUSER_NAME,
-        }
-    ]
-    # Also support standard admin if different
-    if settings.FIRST_SUPERUSER_EMAIL.lower() != "admin@medicare360.com":
-        admins_to_seed.append({
-            "email": "admin@medicare360.com",
-            "password": "Admin@123",
-            "full_name": "MediCare360 System Admin",
-        })
-
-    for admin_info in admins_to_seed:
-        admin_email = admin_info["email"].lower()
+    # 1. Seed Master Admin — only if credentials provided via environment variables
+    #    Set FIRST_SUPERUSER_EMAIL and FIRST_SUPERUSER_PASSWORD in .env (never committed)
+    if settings.FIRST_SUPERUSER_EMAIL and settings.FIRST_SUPERUSER_PASSWORD:
+        admin_email = settings.FIRST_SUPERUSER_EMAIL.strip().lower()
         admin_user = db.query(User).filter(User.email == admin_email).first()
         if not admin_user:
             try:
                 admin_user = User(
                     email=admin_email,
-                    hashed_password=get_password_hash(admin_info["password"]),
-                    full_name=admin_info["full_name"],
+                    hashed_password=get_password_hash(settings.FIRST_SUPERUSER_PASSWORD),
+                    full_name=settings.FIRST_SUPERUSER_NAME or "Hospital Administrator",
                     role=UserRole.ADMIN,
                     is_active=True,
                     is_verified=True,
-                    phone="+1-800-MED-360"
+                    phone=None,
                 )
                 db.add(admin_user)
                 db.commit()
                 db.refresh(admin_user)
-                logger.info(f"Master admin seeded: {admin_email}")
+                logger.info(f"Master admin seeded from environment variables: {admin_email}")
             except Exception as e:
                 db.rollback()
                 logger.error(f"Error seeding admin user '{admin_email}': {e}", exc_info=True)
                 raise e
         else:
             logger.info(f"Admin user already exists: {admin_email}")
+    else:
+        logger.info(
+            "No FIRST_SUPERUSER_EMAIL/FIRST_SUPERUSER_PASSWORD set in environment. "
+            "Admin seeding skipped — use /api/v1/auth/setup-admin to create the first admin."
+        )
 
     # 2. Seed Default Departments
     default_departments = [

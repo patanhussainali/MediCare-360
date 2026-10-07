@@ -10,10 +10,14 @@ export const AuthProvider = ({ children }) => {
   const [hasAdmin, setHasAdmin] = useState(false);
 
   const refreshAuth = async () => {
+    // Initialize non-auth localStorage keys (system settings, audit logs, etc.)
     initializeStorage();
+
+    // Restore session from localStorage cache (populated on login from backend response)
     const storedUser = authService.getCurrentUser();
     setCurrentUser(storedUser);
 
+    // Check backend for admin existence (drives first-run setup UI)
     const adminCheck = await authService.checkAdminStatus();
     setHasAdmin(adminCheck.data?.hasAdmin || false);
     setLoading(false);
@@ -40,12 +44,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const registerPatient = async (patientData) => {
-    const res = await authService.registerPatient(patientData);
-    return res;
+    return authService.registerPatient(patientData);
   };
 
-  const logout = () => {
-    authService.logout();
+  const logout = async () => {
+    await authService.logout();
     setCurrentUser(null);
   };
 

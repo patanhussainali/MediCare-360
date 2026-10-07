@@ -1,8 +1,8 @@
 // Local Storage Persistence Utility for MediCare360
-// Guarantees zero initial hardcoded operational data.
+// Handles only non-authentication application state (UI preferences, cached data).
+// Authentication is handled exclusively by the FastAPI backend + database.
 
 const STORAGE_KEYS = {
-  USERS: 'medicare360_users',
   PATIENTS: 'medicare360_patients',
   DOCTORS: 'medicare360_doctors',
   NURSES: 'medicare360_nurses',
@@ -20,18 +20,8 @@ const STORAGE_KEYS = {
   SYSTEM_SETTINGS: 'medicare360_system_settings',
   CURRENT_USER: 'medicare360_current_user',
   TOKEN: 'medicare360_auth_token',
+  REFRESH_TOKEN: 'medicare360_refresh_token',
 };
-
-// Initial default departments (can be modified by Admin)
-const DEFAULT_DEPARTMENTS = [
-  { id: 'dep-1', name: 'Cardiology', code: 'CARD', description: 'Heart & Cardiovascular Care', status: 'Active' },
-  { id: 'dep-2', name: 'Neurology', code: 'NEUR', description: 'Brain & Nervous System Care', status: 'Active' },
-  { id: 'dep-3', name: 'Pediatrics', code: 'PEDI', description: 'Child Healthcare', status: 'Active' },
-  { id: 'dep-4', name: 'Orthopedics', code: 'ORTH', description: 'Bones & Joint Care', status: 'Active' },
-  { id: 'dep-5', name: 'Oncology', code: 'ONCO', description: 'Cancer Care & Treatment', status: 'Active' },
-  { id: 'dep-6', name: 'General Medicine', code: 'GENM', description: 'Primary Healthcare', status: 'Active' },
-  { id: 'dep-7', name: 'Emergency', code: 'EMER', description: '24/7 Critical Trauma & Urgent Care', status: 'Active' },
-];
 
 export const getItem = (key, fallback = []) => {
   try {
@@ -61,62 +51,15 @@ export const removeItem = (key) => {
   }
 };
 
-// Default master admin — plain-text password is handled by verifyPassword's legacy fallback.
-// Newly created staff (Doctor, Nurse, etc.) get async SHA-256 hashes via hashPassword().
-const DEFAULT_ADMIN = {
-  id: 'usr-admin-1',
-  name: 'Hospital Administrator',
-  email: 'hussainalipatan@gmail.com',
-  password: 'patan@02',
-  password_hash: 'patan@02',
-  role: 'ADMIN',
-  department: 'Executive Administration',
-  status: 'Active',
-  createdAt: new Date().toISOString(),
-};
-
-// Clean state initialization check
+/**
+ * Initializes non-authentication localStorage keys if not already present.
+ * NOTE: No credentials, users, or passwords are stored here.
+ * All authentication is handled by the backend API + database.
+ */
 export const initializeStorage = () => {
-  let users = getItem(STORAGE_KEYS.USERS, null);
-  if (!users || users.length === 0) {
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify([DEFAULT_ADMIN]));
-  } else {
-    // Ensure the master admin account always exists
-    const adminIndex = users.findIndex(u => u.role === 'ADMIN');
-    if (adminIndex === -1) {
-      // No admin found — add default admin
-      users.push(DEFAULT_ADMIN);
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    } else {
-      // Sync email if it was previously set to a legacy default
-      if (users[adminIndex].email === 'admin@medicare360.com') {
-        users[adminIndex].email = 'hussainalipatan@gmail.com';
-        users[adminIndex].password = 'patan@02';
-        users[adminIndex].password_hash = 'patan@02';
-        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-      }
-    }
-  }
-  
   const initialized = localStorage.getItem('medicare360_initialized');
   if (!initialized) {
-    if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify([DEFAULT_ADMIN]));
-    }
-    localStorage.setItem(STORAGE_KEYS.PATIENTS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.DOCTORS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.NURSES, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.RECEPTIONISTS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.PHARMACISTS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.MEDICAL_RECORDS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.PRESCRIPTIONS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.MEDICINES, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.BILLS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.AUDIT_LOGS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.DEPARTMENTS, JSON.stringify(DEFAULT_DEPARTMENTS));
     localStorage.setItem(STORAGE_KEYS.SYSTEM_SETTINGS, JSON.stringify({
       hospitalName: 'MediCare360 Medical Center',
       tagline: 'Excellence in Compassionate Healthcare',
@@ -133,7 +76,13 @@ export const initializeStorage = () => {
 };
 
 export const resetSystemStorage = () => {
-  localStorage.clear();
+  // Clears only non-auth local state; auth tokens are removed separately on logout
+  Object.values(STORAGE_KEYS).forEach(key => {
+    if (key !== STORAGE_KEYS.CURRENT_USER && key !== STORAGE_KEYS.TOKEN && key !== STORAGE_KEYS.REFRESH_TOKEN) {
+      localStorage.removeItem(key);
+    }
+  });
+  localStorage.removeItem('medicare360_initialized');
   initializeStorage();
 };
 

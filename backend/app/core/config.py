@@ -10,13 +10,14 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
 
-    # Security
-    SECRET_KEY: str = "medicare360_super_secure_production_secret_key_change_in_prod_948294"
+    # Security — must be overridden via environment variable in production
+    # Never hardcode a real SECRET_KEY here; set it in .env (ignored by git)
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # Database
+    # Database — default to local SQLite for development
     DATABASE_URL: str = "sqlite:///./medicare360.db"
     REDIS_URL: str = "redis://localhost:6379/0"
 
@@ -43,9 +44,11 @@ class Settings(BaseSettings):
             return v
         return []
 
-    # Superuser seed
-    FIRST_SUPERUSER_EMAIL: str = "hussainalipatan@gmail.com"
-    FIRST_SUPERUSER_PASSWORD: str = "patan@02"
+    # Initial superuser seed — loaded from environment variables only.
+    # Set FIRST_SUPERUSER_EMAIL and FIRST_SUPERUSER_PASSWORD in .env (never commit real values).
+    # If left empty, database seeding is skipped and admin must be created via the setup-admin endpoint.
+    FIRST_SUPERUSER_EMAIL: str = ""
+    FIRST_SUPERUSER_PASSWORD: str = ""
     FIRST_SUPERUSER_NAME: str = "Hospital Administrator"
 
     @property

@@ -1,192 +1,201 @@
-import { getItem, setItem, removeItem, STORAGE_KEYS } from '../utils/storage.js';
-import { mockApiCall } from './apiClient.js';
-import { logAuditEvent } from './auditService.js';
-import { hashPassword, verifyPassword } from '../utils/security.js';
+/**
+ * authService.js — MediCare360 Authentication Service
+ *
+ * All authentication is performed against the FastAPI backend.
+ * No credentials, user lists, or passwords are stored in this file.
+ * The backend (SQLite/PostgreSQL) is the single source of truth.
+ */
 
-const INVALID_CREDENTIALS_MSG = 'Invalid credentials or unauthorized role.';
+import { axiosInstance } from './apiClient.js';
+import { getItem, setItem, removeItem, STORAGE_KEYS } from '../utils/storage.js';
+import { logAuditEvent } from './auditService.js';
 
 export const authService = {
-  // Check if system has any registered admin
+  /**
+   * Check if system has any registered admin.
+   * Calls the backend /auth/check-admin endpoint.
+   */
   async checkAdminStatus() {
-    return mockApiCall(() => {
-      const users = getItem(STORAGE_KEYS.USERS, []);
-      const hasAdmin = users.some(u => u.role === 'ADMIN' && u.status === 'Active');
-      return { hasAdmin, totalUsers: users.length };
-    });
+    try {
+      const response = await axiosInstance.get('/auth/check-admin');
+      return { success: true, data: response.data };
+    } catch (err) {
+      // If endpoint not available (e.g., first run), assume no admin yet
+      const status = err?.response?.status;
+      if (status === 404 || status === undefined) {
+        return { success: true, data: { hasAdmin: false } };
+      }
+      return { success: true, data: { hasAdmin: false } };
+    }
   },
 
-  // Initial setup routine for establishing the primary Admin account
+  /**
+   * Initial setup routine for establishing the primary Admin account.
+   * Sends credentials to the backend; password is hashed server-side with bcrypt.
+   */
   async setupMasterAdmin(adminData) {
-    const passwordHash = await hashPassword(adminData.password);
-    return mockApiCall(() => {
-      const users = getItem(STORAGE_KEYS.USERS, []);
-      const existingAdmin = users.find(u => u.role === 'ADMIN');
-      if (existingAdmin) {
-        throw new Error('System administrator account is already configured.');
-      }
-
-      const newAdmin = {
-        id: 'usr-admin-1',
-        name: adminData.name || 'Hospital Administrator',
+    try {
+      const response = await axiosInstance.post('/auth/setup-admin', {
+        full_name: adminData.name || 'Hospital Administrator',
         email: adminData.email.trim().toLowerCase(),
-        password: passwordHash,
-        password_hash: passwordHash,
+        password: adminData.password,
         role: 'ADMIN',
-        department: 'Executive Administration',
-        status: 'Active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      });
+
+      const { access_token, refresh_token, user } = response.data;
+
+      // Store safe session data (no password, no hash)
+      const userSession = {
+        id: user.id,
+        name: user.full_name,
+        email: user.email,
+        role: user.role,
+        department: user.department || 'Executive Administration',
+        status: user.is_active ? 'Active' : 'Inactive',
       };
 
-      users.push(newAdmin);
-      setItem(STORAGE_KEYS.USERS, users);
+      setItem(STORAGE_KEYS.CURRENT_USER, userSession);
+      setItem(STORAGE_KEYS.TOKEN, access_token);
+      if (refresh_token) setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
 
-      logAuditEvent('INITIAL_SYSTEM_SETUP', 'System Administrator account created', newAdmin.id, newAdmin.name);
+      logAuditEvent('INITIAL_SYSTEM_SETUP', 'System Administrator account created', userSession.id, userSession.name);
 
-      return { message: 'Master Administrator created successfully', user: newAdmin };
-    });
+      return {
+        success: true,
+        data: { message: 'Master Administrator created successfully', user: userSession },
+      };
+    } catch (err) {
+      const detail = err?.response?.data?.detail || err.message || 'Setup failed';
+      throw new Error(detail);
+    }
   },
 
-  // Centralized Login handler validating Email, Password, and Role strictly against the Database
+  /**
+   * Login — sends credentials to backend for bcrypt verification and JWT issuance.
+   * Never validates passwords locally.
+   */
   async login(email, password, selectedRole) {
     if (!email || !password) {
-      throw new Error(INVALID_CREDENTIALS_MSG);
+      throw new Error('Invalid credentials or unauthorized role.');
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-    const users = getItem(STORAGE_KEYS.USERS, []);
+    try {
+      const response = await axiosInstance.post('/auth/login', {
+        email: email.trim().toLowerCase(),
+        password,
+        role: selectedRole ? selectedRole.toUpperCase() : null,
+      });
 
-    // 1. Find user by email in central user database
-    const user = users.find(u => u.email && u.email.toLowerCase() === cleanEmail);
-    if (!user) {
-      // Do not reveal whether email exists
-      throw new Error(INVALID_CREDENTIALS_MSG);
-    }
+      const { access_token, refresh_token, user } = response.data;
 
-    // 2. Verify Password using cryptographic verification
-    const storedHashOrPlain = user.password_hash || user.password;
-    const isPasswordValid = await verifyPassword(password, storedHashOrPlain);
-    if (!isPasswordValid) {
-      // Do not reveal whether password was incorrect
-      throw new Error(INVALID_CREDENTIALS_MSG);
-    }
-
-    // 3. Verify Database Role matches the Selected Login Role (Prevent Role Switching)
-    // The role stored in the backend/database is ALWAYS the single source of truth.
-    // Neither Doctor, Nurse, Admin, nor any role can log in through an unauthorized role entry point.
-    const normalizedSelectedRole = (selectedRole || '').toUpperCase();
-    const normalizedUserRole = (user.role || '').toUpperCase();
-
-    if (!normalizedSelectedRole || normalizedUserRole !== normalizedSelectedRole) {
-      // Do not reveal whether role was wrong vs bad password
-      throw new Error(INVALID_CREDENTIALS_MSG);
-    }
-
-    // 4. Validate Account Status
-    if (user.status !== 'Active') {
-      throw new Error('Account is deactivated. Please contact Hospital Administration.');
-    }
-
-    // 5. Upgrade legacy plain-text password to hash in background if needed
-    if (!user.password_hash || !user.password_hash.startsWith('$sha256$')) {
-      hashPassword(password).then(newHash => {
-        const currentUsers = getItem(STORAGE_KEYS.USERS, []);
-        const idx = currentUsers.findIndex(u => u.id === user.id);
-        if (idx !== -1) {
-          currentUsers[idx].password_hash = newHash;
-          currentUsers[idx].password = newHash;
-          setItem(STORAGE_KEYS.USERS, currentUsers);
-        }
-      }).catch(() => {});
-    }
-
-    // 6. Generate secure session & token using database-defined role (never user-input role)
-    const token = `jwt_${user.id}_${user.role}_${Date.now()}`;
-    const userSession = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role, // Database role is strictly enforced
-      department: user.department || 'N/A',
-      profileId: user.profileId || null,
-      status: user.status,
-    };
-
-    setItem(STORAGE_KEYS.CURRENT_USER, userSession);
-    setItem(STORAGE_KEYS.TOKEN, token);
-
-    logAuditEvent('USER_LOGIN', `User authenticated successfully via ${user.role} Portal`, user.id, user.name);
-
-    return { success: true, data: { user: userSession, token } };
-  },
-
-  // Patient registration (self-registration)
-  async registerPatient(patientData) {
-    const passwordHash = await hashPassword(patientData.password);
-    return mockApiCall(() => {
-      const users = getItem(STORAGE_KEYS.USERS, []);
-      const patients = getItem(STORAGE_KEYS.PATIENTS, []);
-      const cleanEmail = patientData.email.trim().toLowerCase();
-
-      if (users.some(u => u.email.toLowerCase() === cleanEmail)) {
-        throw new Error('An account with this email address already exists.');
+      if (!user) {
+        throw new Error('Invalid credentials or unauthorized role.');
       }
 
-      const newId = `PAT-${Math.floor(100000 + Math.random() * 900000)}`;
-      const userId = `usr-pat-${Date.now()}`;
+      // Enforce role matching (backend validates, but also double-check in session)
+      const normalizedSelectedRole = (selectedRole || '').toUpperCase();
+      const normalizedUserRole = (user.role || '').toUpperCase();
+      if (normalizedSelectedRole && normalizedUserRole !== normalizedSelectedRole) {
+        throw new Error('Invalid credentials or unauthorized role.');
+      }
 
-      const newPatientProfile = {
-        id: newId,
-        userId: userId,
-        name: patientData.name,
-        email: cleanEmail,
-        phone: patientData.phone,
-        gender: patientData.gender,
-        dateOfBirth: patientData.dateOfBirth,
-        bloodGroup: patientData.bloodGroup || 'Not Specified',
-        address: patientData.address || '',
-        emergencyContact: patientData.emergencyContact || '',
-        allergies: patientData.allergies ? patientData.allergies.split(',').map(a => a.trim()) : [],
-        chronicConditions: patientData.chronicConditions ? patientData.chronicConditions.split(',').map(c => c.trim()) : [],
-        status: 'Active',
-        registeredAt: new Date().toISOString(),
+      // Store only safe, non-sensitive session info (never password or hash)
+      const userSession = {
+        id: user.id,
+        name: user.full_name,
+        email: user.email,
+        role: user.role,          // Role from backend/database — never from client input
+        department: user.department || 'N/A',
+        profileId: user.profile_id || null,
+        status: user.is_active ? 'Active' : 'Inactive',
       };
 
-      const newUserAccount = {
-        id: userId,
-        profileId: newId,
-        name: patientData.name,
-        email: cleanEmail,
-        password: passwordHash,
-        password_hash: passwordHash,
-        role: 'PATIENT',
-        status: 'Active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      setItem(STORAGE_KEYS.CURRENT_USER, userSession);
+      setItem(STORAGE_KEYS.TOKEN, access_token);
+      if (refresh_token) setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
 
-      patients.push(newPatientProfile);
-      users.push(newUserAccount);
+      logAuditEvent('USER_LOGIN', `User authenticated via ${user.role} Portal`, user.id, user.full_name);
 
-      setItem(STORAGE_KEYS.PATIENTS, patients);
-      setItem(STORAGE_KEYS.USERS, users);
-
-      logAuditEvent('PATIENT_REGISTER', `New patient registered: ${patientData.name}`, userId, patientData.name);
-
-      return { patient: newPatientProfile, user: newUserAccount };
-    });
+      return { success: true, data: { user: userSession, token: access_token } };
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 400) {
+        throw new Error('Invalid credentials or unauthorized role.');
+      }
+      throw new Error(err?.response?.data?.detail || err.message || 'Login failed');
+    }
   },
 
+  /**
+   * Patient self-registration — password hashed server-side.
+   */
+  async registerPatient(patientData) {
+    try {
+      const response = await axiosInstance.post('/auth/register', {
+        full_name: patientData.name,
+        email: patientData.email.trim().toLowerCase(),
+        password: patientData.password,
+        phone_number: patientData.phone,
+        role: 'PATIENT',
+      });
+
+      logAuditEvent('PATIENT_REGISTER', `New patient registered: ${patientData.name}`, response.data.id, patientData.name);
+
+      return { success: true, data: response.data };
+    } catch (err) {
+      const detail = err?.response?.data?.detail || err.message || 'Registration failed';
+      throw new Error(detail);
+    }
+  },
+
+  /**
+   * Get the currently authenticated user from local session cache.
+   * The session was populated from the backend response on login.
+   */
   getCurrentUser() {
     return getItem(STORAGE_KEYS.CURRENT_USER, null);
   },
 
-  logout() {
+  /**
+   * Logout — invalidates the JWT on the backend, then clears local session.
+   */
+  async logout() {
     const user = getItem(STORAGE_KEYS.CURRENT_USER, null);
-    if (user) {
-      logAuditEvent('USER_LOGOUT', `User logged out`, user.id, user.name);
+    try {
+      // Notify backend to blacklist the token
+      await axiosInstance.post('/auth/logout');
+    } catch {
+      // Proceed with local cleanup even if backend is unreachable
+    } finally {
+      if (user) {
+        logAuditEvent('USER_LOGOUT', 'User logged out', user.id, user.name);
+      }
+      removeItem(STORAGE_KEYS.CURRENT_USER);
+      removeItem(STORAGE_KEYS.TOKEN);
+      removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     }
-    removeItem(STORAGE_KEYS.CURRENT_USER);
-    removeItem(STORAGE_KEYS.TOKEN);
-  }
+  },
+
+  /**
+   * Refresh the access token using the stored refresh token.
+   */
+  async refreshAccessToken() {
+    const refreshToken = getItem(STORAGE_KEYS.REFRESH_TOKEN, null);
+    if (!refreshToken) return null;
+
+    try {
+      const response = await axiosInstance.post('/auth/refresh', {
+        refresh_token: refreshToken,
+      });
+      const { access_token, refresh_token: newRefreshToken } = response.data;
+      setItem(STORAGE_KEYS.TOKEN, access_token);
+      if (newRefreshToken) setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
+      return access_token;
+    } catch {
+      // Refresh failed — clear session
+      removeItem(STORAGE_KEYS.CURRENT_USER);
+      removeItem(STORAGE_KEYS.TOKEN);
+      removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      return null;
+    }
+  },
 };
