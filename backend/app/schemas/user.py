@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from typing import Optional, Union, Any
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 from app.models.user import UserRole
 
 
@@ -23,6 +23,15 @@ class UserCreate(BaseModel):
     def phone(self) -> Optional[str]:
         return self.phone_number
 
+    @field_validator("role", mode="before")
+    @classmethod
+    def normalize_role(cls, v: Any):
+        if isinstance(v, str) and v.strip():
+            role_key = v.strip().upper()
+            if role_key in UserRole.__members__:
+                return UserRole[role_key]
+        return v
+
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -31,6 +40,15 @@ class UserUpdate(BaseModel):
     role: Optional[UserRole] = None
     password: Optional[str] = None
 
+    @field_validator("role", mode="before")
+    @classmethod
+    def normalize_role(cls, v: Any):
+        if isinstance(v, str) and v.strip():
+            role_key = v.strip().upper()
+            if role_key in UserRole.__members__:
+                return UserRole[role_key]
+        return v
+
 
 class UserResponse(UserBase):
     id: int
@@ -38,14 +56,44 @@ class UserResponse(UserBase):
     last_login: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
+    profile_id: Optional[str] = None
+    department: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def extract_profile_fields(cls, data: Any):
+        if hasattr(data, "doctor_profile") and getattr(data, "doctor_profile"):
+            dp = data.doctor_profile
+            data_dict = {c.name: getattr(data, c.name) for c in data.__table__.columns}
+            data_dict["profile_id"] = getattr(dp, "doctor_id", None)
+            if hasattr(dp, "department") and dp.department:
+                data_dict["department"] = getattr(dp.department, "name", None)
+            elif getattr(dp, "specialization", None):
+                data_dict["department"] = dp.specialization
+            return data_dict
+        elif hasattr(data, "patient_profile") and getattr(data, "patient_profile"):
+            pp = data.patient_profile
+            data_dict = {c.name: getattr(data, c.name) for c in data.__table__.columns}
+            data_dict["profile_id"] = getattr(pp, "patient_id", None)
+            return data_dict
+        return data
 
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
-    role: Optional[UserRole] = None
+    role: Optional[Union[UserRole, str]] = None
+
+    @field_validator("role", mode="before")
+    @classmethod
+    def normalize_login_role(cls, v: Any):
+        if isinstance(v, str) and v.strip():
+            role_key = v.strip().upper()
+            if role_key in UserRole.__members__:
+                return UserRole[role_key]
+        return v
 
 
 class Token(BaseModel):

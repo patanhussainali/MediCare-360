@@ -10,12 +10,27 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database.session import get_db
-from app.schemas.user import UserResponse, UserUpdate
+from app.schemas.user import UserResponse, UserUpdate, UserCreate
+from app.services.auth_service import auth_service
 from app.core.dependencies import require_roles
 from app.core.security import get_password_hash
 from app.models.user import User, UserRole
 
 router = APIRouter(prefix="/users", tags=["User Management"])
+
+
+@router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+def create_user(
+    user_in: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.ADMIN))
+):
+    """
+    Create a new user with specified role. Admin only.
+    Password is automatically hashed with bcrypt.
+    Role profiles are linked automatically.
+    """
+    return auth_service.register(db, user_in)
 
 
 @router.get("", response_model=List[UserResponse])

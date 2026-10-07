@@ -31,7 +31,7 @@ export const DataProvider = ({ children }) => {
   const [systemSettings, setSystemSettings] = useState({});
   const [loading, setLoading] = useState(true);
 
-  const fetchAllData = useCallback(() => {
+  const fetchAllData = useCallback(async () => {
     try {
       setPatients(getItem(STORAGE_KEYS.PATIENTS, []));
       setDoctors(getItem(STORAGE_KEYS.DOCTORS, []));
@@ -47,6 +47,17 @@ export const DataProvider = ({ children }) => {
       setNotifications(getItem(STORAGE_KEYS.NOTIFICATIONS, []));
       setAuditLogs(getItem(STORAGE_KEYS.AUDIT_LOGS, []));
       setSystemSettings(getItem(STORAGE_KEYS.SYSTEM_SETTINGS, {}));
+
+      // Background sync from backend if authenticated
+      const token = getItem(STORAGE_KEYS.TOKEN, null);
+      if (token) {
+        doctorService.getAllDoctors().then(res => {
+          if (res?.data && res.data.length > 0) setDoctors(res.data);
+        }).catch(() => {});
+        patientService.getAllPatients().then(res => {
+          if (res?.data && res.data.length > 0) setPatients(res.data);
+        }).catch(() => {});
+      }
     } catch (e) {
       console.error('Error fetching system data:', e);
     } finally {

@@ -18,8 +18,9 @@ from app.services.audit_service import audit_service
 class AuthService:
     @staticmethod
     def register(db: Session, user_in: UserCreate, ip_address: Optional[str] = None) -> User:
+        email_clean = user_in.email.strip().lower()
         # Check if email already registered
-        existing_user = db.query(User).filter(User.email == user_in.email.lower()).first()
+        existing_user = db.query(User).filter(User.email == email_clean).first()
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -34,17 +35,56 @@ class AuthService:
             )
         
         user = User(
-            email=user_in.email.lower(),
+            email=email_clean,
             hashed_password=get_password_hash(user_in.password),
             full_name=user_in.full_name,
             role=user_in.role or UserRole.PATIENT,
             phone=user_in.phone_number,
             is_active=True,
-            is_verified=False
+            is_verified=True
         )
         db.add(user)
         db.commit()
         db.refresh(user)
+
+        # Ensure linked role profile exists
+        if user.role == UserRole.DOCTOR:
+            from app.models.doctor import Doctor
+            import uuid
+            existing_doc = db.query(Doctor).filter(Doctor.user_id == user.id).first()
+            if not existing_doc:
+                doc = Doctor(
+                    doctor_id=f"DOC-{uuid.uuid4().hex[:6].upper()}",
+                    user_id=user.id,
+                    full_name=user.full_name,
+                    specialization="Cardiology",
+                    qualification="MD, MBBS",
+                    department_id=1,
+                    experience_years=5,
+                    consultation_fee=120.0,
+                    phone=user.phone or "0000000000",
+                    email=user.email,
+                    status="Available"
+                )
+                db.add(doc)
+                db.commit()
+        elif user.role == UserRole.PATIENT:
+            from app.models.patient import Patient
+            import random
+            existing_pat = db.query(Patient).filter(Patient.user_id == user.id).first()
+            if not existing_pat:
+                pat = Patient(
+                    patient_id=f"PAT-{random.randint(100000, 999999)}",
+                    user_id=user.id,
+                    full_name=user.full_name,
+                    gender="Other",
+                    date_of_birth="2000-01-01",
+                    phone=user.phone or "0000000000",
+                    email=user.email,
+                    status="Active"
+                )
+                db.add(pat)
+                db.commit()
 
         audit_service.log_action(
             db=db,
@@ -60,7 +100,8 @@ class AuthService:
 
     @staticmethod
     def authenticate(db: Session, login_data: UserLogin, ip_address: Optional[str] = None) -> Tuple[Token, User]:
-        user = db.query(User).filter(User.email == login_data.email.lower()).first()
+        clean_email = login_data.email.strip().lower()
+        user = db.query(User).filter(User.email == clean_email).first()
         if not user or not verify_password(login_data.password, user.hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -69,12 +110,14 @@ class AuthService:
             )
 
         # Verify role against database source of truth (Prevent Role Switching)
-        if login_data.role is not None and user.role != login_data.role:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid credentials or unauthorized role",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+        if login_data.role is not None:
+            expected_role_str = str(login_data.role.value if hasattr(login_data.role, 'value') else login_data.role).upper()
+            if user.role.value.upper() != expected_role_str:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid credentials or unauthorized role",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
         
         if not user.is_active:
             raise HTTPException(
