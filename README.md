@@ -4,45 +4,7 @@ MediCare-360 is an enterprise-grade, full-stack hospital management web applicat
 
 ---
 
-## 🏗️ Repository Architecture
 
-The project is structured as a full-stack monorepo:
-
-```
-medicare-360/
-├── backend/                  # FastAPI Python backend service
-│   ├── app/
-│   │   ├── api/              # API endpoints and route handlers
-│   │   ├── core/             # Auth (JWT/Bcrypt), RBAC, configurations
-│   │   ├── database/         # SQLAlchemy session and initial seeders
-│   │   ├── models/           # SQLAlchemy 2.0 ORM data models
-│   │   ├── repositories/     # Generic CRUD repository layer
-│   │   ├── schemas/          # Pydantic v2 validation models
-│   │   └── services/         # Core business logic layer
-│   ├── alembic/              # Database migration versions
-│   ├── tests/                # Automated pytest suite
-│   ├── requirements.txt      # Python dependencies
-│   ├── .env.example          # Backend environment template
-│   └── README.md             # Backend detailed documentation
-│
-├── frontend/                 # React + Vite frontend client
-│   ├── src/
-│   │   ├── components/       # Reusable UI & Layout components
-│   │   ├── context/          # Auth, Data, and Theme context providers
-│   │   ├── pages/            # Role-specific and public route views
-│   │   ├── routes/           # Protected routes & App router
-│   │   ├── services/         # API clients & service integrations
-│   │   └── utils/            # Formatters, validators, and security utilities
-│   ├── public/               # Static assets
-│   ├── index.html            # Single page app entry point
-│   ├── package.json          # Node dependencies and scripts
-│   ├── tailwind.config.js    # Tailwind styling tokens
-│   └── vite.config.js        # Vite bundler configuration
-│
-└── README.md                 # Project root documentation
-```
-
----
 
 ## 👥 Role-Based Portals
 
