@@ -24,10 +24,36 @@ class StaffService:
 
     @staticmethod
     def create_nurse(db: Session, nurse_in: NurseCreate, current_user: Optional[User] = None) -> Nurse:
-        existing = db.query(Nurse).filter(Nurse.license_number == nurse_in.license_number).first()
-        if existing:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="License number already in use")
-        nurse = Nurse(**nurse_in.model_dump())
+        import uuid
+        from app.models.user import UserRole
+        from app.core.security import get_password_hash
+
+        if nurse_in.license_number:
+            existing = db.query(Nurse).filter(Nurse.license_number == nurse_in.license_number).first()
+            if existing:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="License number already in use")
+
+        user = db.query(User).filter(User.email == nurse_in.email.lower()).first()
+        if not user:
+            user = User(
+                email=nurse_in.email.lower(),
+                hashed_password=get_password_hash(nurse_in.password or "Nurse@123"),
+                full_name=nurse_in.full_name,
+                role=UserRole.NURSE,
+                phone=nurse_in.phone,
+                is_active=True,
+                is_verified=True
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        data = nurse_in.model_dump(exclude={"password"})
+        nurse = Nurse(
+            nurse_id=f"NUR-{uuid.uuid4().hex[:6].upper()}",
+            user_id=user.id,
+            **data
+        )
         db.add(nurse)
         db.commit()
         db.refresh(nurse)
@@ -45,7 +71,31 @@ class StaffService:
 
     @staticmethod
     def create_receptionist(db: Session, rec_in: ReceptionistCreate, current_user: Optional[User] = None) -> Receptionist:
-        rec = Receptionist(**rec_in.model_dump())
+        import uuid
+        from app.models.user import UserRole
+        from app.core.security import get_password_hash
+
+        user = db.query(User).filter(User.email == rec_in.email.lower()).first()
+        if not user:
+            user = User(
+                email=rec_in.email.lower(),
+                hashed_password=get_password_hash(rec_in.password or "Receptionist@123"),
+                full_name=rec_in.full_name,
+                role=UserRole.RECEPTIONIST,
+                phone=rec_in.phone,
+                is_active=True,
+                is_verified=True
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        data = rec_in.model_dump(exclude={"password"})
+        rec = Receptionist(
+            receptionist_id=f"REC-{uuid.uuid4().hex[:6].upper()}",
+            user_id=user.id,
+            **data
+        )
         db.add(rec)
         db.commit()
         db.refresh(rec)
@@ -63,10 +113,35 @@ class StaffService:
 
     @staticmethod
     def create_pharmacist(db: Session, pharm_in: PharmacistCreate, current_user: Optional[User] = None) -> Pharmacist:
+        import uuid
+        from app.models.user import UserRole
+        from app.core.security import get_password_hash
+
         existing = db.query(Pharmacist).filter(Pharmacist.license_number == pharm_in.license_number).first()
         if existing:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="License number already in use")
-        pharm = Pharmacist(**pharm_in.model_dump())
+
+        user = db.query(User).filter(User.email == pharm_in.email.lower()).first()
+        if not user:
+            user = User(
+                email=pharm_in.email.lower(),
+                hashed_password=get_password_hash(pharm_in.password or "Pharmacist@123"),
+                full_name=pharm_in.full_name,
+                role=UserRole.PHARMACIST,
+                phone=pharm_in.phone,
+                is_active=True,
+                is_verified=True
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        data = pharm_in.model_dump(exclude={"password"})
+        pharm = Pharmacist(
+            pharmacist_id=f"PHAR-{uuid.uuid4().hex[:6].upper()}",
+            user_id=user.id,
+            **data
+        )
         db.add(pharm)
         db.commit()
         db.refresh(pharm)

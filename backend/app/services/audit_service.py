@@ -1,3 +1,4 @@
+import json
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any, List
 from app.models.audit_log import AuditLog
@@ -19,14 +20,18 @@ class AuditService:
     ) -> AuditLog:
         actual_user_id = user.id if user else user_id
         actual_user_email = user.email if user else user_email
+        actual_user_name = user.full_name if user else (user_email or "System")
+        
+        details_str = json.dumps(details) if isinstance(details, (dict, list)) else (str(details) if details else None)
         
         log = AuditLog(
             user_id=actual_user_id,
             user_email=actual_user_email,
+            user_name=actual_user_name,
             action=action,
             resource=resource,
             resource_id=str(resource_id) if resource_id is not None else None,
-            details=details,
+            details=details_str,
             ip_address=ip_address,
             user_agent=user_agent
         )

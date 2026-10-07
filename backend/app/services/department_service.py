@@ -27,7 +27,18 @@ class DepartmentService:
                 detail=f"Department '{dept_in.name}' already exists."
             )
 
-        department = Department(**dept_in.model_dump())
+        dept_dict = dept_in.model_dump()
+        if not dept_dict.get("code"):
+            import re
+            clean_name = re.sub(r'[^A-Za-z0-9]', '', dept_dict["name"]).upper()
+            dept_dict["code"] = clean_name[:6] if clean_name else "DEPT"
+
+        if "is_active" in dept_dict and "status" not in dept_dict:
+            dept_dict["status"] = "Active" if dept_dict["is_active"] else "Inactive"
+        elif "status" in dept_dict and "is_active" not in dept_dict:
+            dept_dict["is_active"] = (dept_dict["status"].lower() == "active")
+
+        department = Department(**dept_dict)
         db.add(department)
         db.commit()
         db.refresh(department)
@@ -38,7 +49,7 @@ class DepartmentService:
             resource="Department",
             user=current_user,
             resource_id=str(department.id),
-            details={"name": department.name}
+            details={"name": department.name, "code": department.code}
         )
 
         return department
@@ -55,6 +66,11 @@ class DepartmentService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Department not found")
 
         update_data = dept_in.model_dump(exclude_unset=True)
+        if "is_active" in update_data and "status" not in update_data:
+            update_data["status"] = "Active" if update_data["is_active"] else "Inactive"
+        elif "status" in update_data and "is_active" not in update_data:
+            update_data["is_active"] = (update_data["status"].lower() == "active")
+
         for field, value in update_data.items():
             setattr(department, field, value)
 

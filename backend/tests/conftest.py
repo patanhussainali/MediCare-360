@@ -24,8 +24,14 @@ def override_get_db():
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
-    """Create all tables at start of test session, drop at end."""
+    """Create all tables and seed database at start of test session, drop at end."""
     Base.metadata.create_all(bind=engine)
+    test_db = TestingSessionLocal()
+    try:
+        from app.database.init_db import init_db
+        init_db(test_db)
+    finally:
+        test_db.close()
     yield
     Base.metadata.drop_all(bind=engine)
 
@@ -51,7 +57,7 @@ def client(setup_test_db):
     app.dependency_overrides.clear()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def admin_token(client):
     """Obtain admin JWT access token for protected endpoint tests."""
     response = client.post("/api/v1/auth/login", json={

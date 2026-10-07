@@ -12,6 +12,7 @@ class Nurse(Base, TimestampMixin):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     department_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("departments.id", ondelete="SET NULL"), nullable=True)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    license_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     shift: Mapped[str] = mapped_column(String(50), default="Morning", nullable=False)
     phone: Mapped[str] = mapped_column(String(50), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False)

@@ -83,7 +83,7 @@ class ReportService:
         total = db.query(func.count(Medicine.id)).scalar() or 0
         low_stock = db.query(func.count(Medicine.id)).filter(Medicine.stock_quantity <= Medicine.min_stock_threshold, Medicine.stock_quantity > 0).scalar() or 0
         out_of_stock = db.query(func.count(Medicine.id)).filter(Medicine.stock_quantity == 0).scalar() or 0
-        total_dispensed = db.query(func.sum(MedicineIssueRecord.quantity_issued)).scalar() or 0
+        total_dispensed = db.query(func.sum(MedicineIssueRecord.quantity)).scalar() or 0
 
         return PharmacyStatsResponse(
             total_medicines=total,

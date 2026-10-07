@@ -27,12 +27,14 @@ async def lifespan(app: FastAPI):
     try:
         from app.database.init_db import init_db
         init_db(db)
-        logger.info("✅ Database initialized and seeded.")
+        logger.info("Database initialization completed successfully.")
     except Exception as e:
-        logger.error(f"❌ Database initialization failed: {e}")
+        logger.error(f"❌ Database initialization failed: {e}", exc_info=True)
+        raise e
     finally:
         db.close()
     
+    logger.info("Application startup complete.")
     yield
     
     # Shutdown

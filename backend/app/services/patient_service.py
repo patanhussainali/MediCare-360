@@ -22,7 +22,7 @@ class PatientService:
 
     @staticmethod
     def get_by_mrn(db: Session, mrn: str) -> Optional[Patient]:
-        return db.query(Patient).filter(Patient.medical_record_number == mrn).first()
+        return db.query(Patient).filter(Patient.patient_id == mrn).first()
 
     @staticmethod
     def get_multi(
@@ -36,10 +36,9 @@ class PatientService:
             search_filter = f"%{search}%"
             query = query.filter(
                 or_(
-                    Patient.first_name.ilike(search_filter),
-                    Patient.last_name.ilike(search_filter),
-                    Patient.medical_record_number.ilike(search_filter),
-                    Patient.phone_number.ilike(search_filter),
+                    Patient.full_name.ilike(search_filter),
+                    Patient.patient_id.ilike(search_filter),
+                    Patient.phone.ilike(search_filter),
                     Patient.email.ilike(search_filter)
                 )
             )
@@ -47,21 +46,52 @@ class PatientService:
 
     @staticmethod
     def create(db: Session, patient_in: PatientCreate, current_user: Optional[User] = None) -> Patient:
+        from app.models.user import UserRole
+        from app.core.security import get_password_hash
+
         # Check MRN collision or generate
         mrn = patient_in.medical_record_number
         if not mrn:
             mrn = PatientService.generate_mrn()
-            while db.query(Patient).filter(Patient.medical_record_number == mrn).first():
+            while db.query(Patient).filter(Patient.patient_id == mrn).first():
                 mrn = PatientService.generate_mrn()
         else:
-            if db.query(Patient).filter(Patient.medical_record_number == mrn).first():
+            if db.query(Patient).filter(Patient.patient_id == mrn).first():
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Patient with MRN {mrn} already exists."
                 )
 
-        patient_dict = patient_in.model_dump(exclude={"medical_record_number"})
-        patient = Patient(**patient_dict, medical_record_number=mrn)
+        # Check existing email
+        existing_patient = db.query(Patient).filter(Patient.email == patient_in.email.lower()).first()
+        if existing_patient:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Patient with email '{patient_in.email}' already exists."
+            )
+
+        # Ensure user account
+        user = db.query(User).filter(User.email == patient_in.email.lower()).first()
+        if not user:
+            user = User(
+                email=patient_in.email.lower(),
+                hashed_password=get_password_hash(patient_in.password or "Patient@123"),
+                full_name=patient_in.full_name,
+                role=UserRole.PATIENT,
+                phone=patient_in.phone,
+                is_active=True,
+                is_verified=True
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        patient_dict = patient_in.model_dump(exclude={"medical_record_number", "password"})
+        patient = Patient(
+            patient_id=mrn,
+            user_id=user.id,
+            **patient_dict
+        )
         db.add(patient)
         db.commit()
         db.refresh(patient)
@@ -72,7 +102,7 @@ class PatientService:
             resource="Patient",
             user=current_user,
             resource_id=str(patient.id),
-            details={"mrn": patient.medical_record_number, "name": f"{patient.first_name} {patient.last_name}"}
+            details={"mrn": patient.patient_id, "name": patient.full_name}
         )
 
         return patient

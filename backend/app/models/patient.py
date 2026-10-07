@@ -28,3 +28,21 @@ class Patient(Base, TimestampMixin):
     medical_records = relationship("MedicalRecord", back_populates="patient", cascade="all, delete-orphan")
     prescriptions = relationship("Prescription", back_populates="patient", cascade="all, delete-orphan")
     invoices = relationship("Invoice", back_populates="patient", cascade="all, delete-orphan")
+
+    @property
+    def medical_record_number(self) -> str:
+        return self.patient_id
+
+    @property
+    def first_name(self) -> str:
+        parts = (self.full_name or "").split(" ", 1)
+        return parts[0]
+
+    @property
+    def last_name(self) -> str:
+        parts = (self.full_name or "").split(" ", 1)
+        return parts[1] if len(parts) > 1 else ""
+
+    @property
+    def phone_number(self) -> str:
+        return self.phone

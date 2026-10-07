@@ -23,20 +23,49 @@ class DoctorService:
         if department_id is not None:
             query = query.filter(Doctor.department_id == department_id)
         if is_available is not None:
-            query = query.filter(Doctor.is_available == is_available)
+            if is_available:
+                query = query.filter(Doctor.status == "Available")
+            else:
+                query = query.filter(Doctor.status != "Available")
         return query.order_by(Doctor.id.asc()).offset(skip).limit(limit).all()
 
     @staticmethod
     def create(db: Session, doctor_in: DoctorCreate, current_user: Optional[User] = None) -> Doctor:
-        # Check license uniqueness
-        existing_doc = db.query(Doctor).filter(Doctor.license_number == doctor_in.license_number).first()
+        import uuid
+        from app.models.user import UserRole
+        from app.core.security import get_password_hash
+
+        # Check email uniqueness
+        existing_doc = db.query(Doctor).filter(Doctor.email == doctor_in.email.lower()).first()
         if existing_doc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Doctor with license number '{doctor_in.license_number}' already exists."
+                detail=f"Doctor with email '{doctor_in.email}' already exists."
             )
-        
-        doctor = Doctor(**doctor_in.model_dump())
+
+        # Ensure user account exists
+        user = db.query(User).filter(User.email == doctor_in.email.lower()).first()
+        if not user:
+            user = User(
+                email=doctor_in.email.lower(),
+                hashed_password=get_password_hash(doctor_in.password or "Doctor@123"),
+                full_name=doctor_in.full_name,
+                role=UserRole.DOCTOR,
+                phone=doctor_in.phone,
+                is_active=True,
+                is_verified=True
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        doc_data = doctor_in.model_dump(exclude={"password"})
+        doctor_id_code = f"DOC-{uuid.uuid4().hex[:6].upper()}"
+        doctor = Doctor(
+            doctor_id=doctor_id_code,
+            user_id=user.id,
+            **doc_data
+        )
         db.add(doctor)
         db.commit()
         db.refresh(doctor)
@@ -47,7 +76,7 @@ class DoctorService:
             resource="Doctor",
             user=current_user,
             resource_id=str(doctor.id),
-            details={"license_number": doctor.license_number, "specialization": doctor.specialization}
+            details={"email": doctor.email, "specialization": doctor.specialization}
         )
 
         return doctor

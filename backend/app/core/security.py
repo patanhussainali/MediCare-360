@@ -25,6 +25,7 @@ def get_password_hash(password: str) -> str:
 
 
 def create_access_token(subject: str, role: str, extra_claims: Optional[Dict[str, Any]] = None, expires_delta: Optional[timedelta] = None) -> str:
+    import uuid
     now = datetime.now(timezone.utc)
     if expires_delta:
         expire = now + expires_delta
@@ -35,6 +36,7 @@ def create_access_token(subject: str, role: str, extra_claims: Optional[Dict[str
         "sub": str(subject),
         "role": role,
         "type": "access",
+        "jti": uuid.uuid4().hex,
         "iat": int(now.timestamp()),
         "exp": int(expire.timestamp()),
     }
@@ -46,6 +48,7 @@ def create_access_token(subject: str, role: str, extra_claims: Optional[Dict[str
 
 
 def create_refresh_token(subject: str, role: str, expires_delta: Optional[timedelta] = None) -> str:
+    import uuid
     now = datetime.now(timezone.utc)
     if expires_delta:
         expire = now + expires_delta
@@ -56,6 +59,7 @@ def create_refresh_token(subject: str, role: str, expires_delta: Optional[timede
         "sub": str(subject),
         "role": role,
         "type": "refresh",
+        "jti": uuid.uuid4().hex,
         "iat": int(now.timestamp()),
         "exp": int(expire.timestamp()),
     }

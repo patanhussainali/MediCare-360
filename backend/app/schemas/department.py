@@ -4,11 +4,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class DepartmentBase(BaseModel):
-    code: str = Field(..., min_length=2, max_length=50)
+    code: Optional[str] = Field(None, max_length=50)
     name: str = Field(..., min_length=2, max_length=255)
     description: Optional[str] = None
     head_of_department: Optional[str] = None
     status: str = "Active"
+    is_active: bool = True
 
 
 class DepartmentCreate(DepartmentBase):
@@ -21,6 +22,7 @@ class DepartmentUpdate(BaseModel):
     description: Optional[str] = None
     head_of_department: Optional[str] = None
     status: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class DepartmentResponse(DepartmentBase):
