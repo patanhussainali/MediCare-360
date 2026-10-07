@@ -122,11 +122,6 @@ Frontend will be available at: `http://localhost:5173`
 
 ---
 
-## 🔑 Default Administrator Credentials
-
-- **Email:** `admin@medicare360.com`
-- **Password:** `Admin@123`
-- **Role:** `ADMIN`
 
 ---
 
