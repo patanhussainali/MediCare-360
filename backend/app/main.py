@@ -64,11 +64,15 @@ def create_application() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS
+    # CORS - configured for localhost development and Netlify / production deployments
+    cors_origins = [str(origin) for origin in settings.CORS_ORIGINS]
+    allow_all_origins = "*" in cors_origins
+
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.CORS_ORIGINS,
-        allow_credentials=True,
+        allow_origins=["*"] if allow_all_origins else cors_origins,
+        allow_origin_regex=None if allow_all_origins else r"^https:\/\/.*\.netlify\.app$",
+        allow_credentials=not allow_all_origins,
         allow_methods=["*"],
         allow_headers=["*"],
     )
