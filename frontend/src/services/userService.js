@@ -31,21 +31,37 @@ export const userService = {
   async createUser(userData, adminUser) {
     const role = (userData.role || 'PATIENT').toUpperCase();
     const rawPassword = userData.password || `${role.charAt(0) + role.slice(1).toLowerCase()}@123`;
+    const cleanEmail = userData.email.trim().toLowerCase();
 
     try {
-      const response = await axiosInstance.post('/auth/register', {
-        full_name: userData.name,
-        email: userData.email.trim().toLowerCase(),
-        password: rawPassword,
-        phone_number: userData.phone || null,
-        role: role,
-      });
+      let response;
+      try {
+        response = await axiosInstance.post('/users', {
+          full_name: userData.name,
+          email: cleanEmail,
+          password: rawPassword,
+          phone_number: userData.phone || null,
+          role: role,
+        });
+      } catch (adminEndpointErr) {
+        if (adminEndpointErr?.response?.status === 404 || adminEndpointErr?.response?.status === 401) {
+          response = await axiosInstance.post('/auth/register', {
+            full_name: userData.name,
+            email: cleanEmail,
+            password: rawPassword,
+            phone_number: userData.phone || null,
+            role: role,
+          });
+        } else {
+          throw adminEndpointErr;
+        }
+      }
 
       const newUser = response.data;
       logAuditEvent('ADMIN_USER_CREATE', `Created new user ${newUser.full_name} with role ${newUser.role}`, adminUser?.id, adminUser?.name);
       return { success: true, data: newUser };
     } catch (err) {
-      throw new Error(err?.response?.data?.detail || 'Failed to create user');
+      throw new Error(err?.response?.data?.detail || err.message || 'Failed to create user');
     }
   },
 

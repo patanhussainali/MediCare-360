@@ -85,6 +85,55 @@ class AuthService:
                 )
                 db.add(pat)
                 db.commit()
+        elif user.role == UserRole.NURSE:
+            from app.models.staff import Nurse
+            import uuid
+            existing_nurse = db.query(Nurse).filter(Nurse.user_id == user.id).first()
+            if not existing_nurse:
+                nurse = Nurse(
+                    nurse_id=f"NUR-{uuid.uuid4().hex[:6].upper()}",
+                    user_id=user.id,
+                    full_name=user.full_name,
+                    license_number=f"RN-{uuid.uuid4().hex[:6].upper()}",
+                    shift="Morning",
+                    phone=user.phone or "0000000000",
+                    email=user.email,
+                    status="Active"
+                )
+                db.add(nurse)
+                db.commit()
+        elif user.role == UserRole.RECEPTIONIST:
+            from app.models.staff import Receptionist
+            import uuid
+            existing_rec = db.query(Receptionist).filter(Receptionist.user_id == user.id).first()
+            if not existing_rec:
+                rec = Receptionist(
+                    receptionist_id=f"REC-{uuid.uuid4().hex[:6].upper()}",
+                    user_id=user.id,
+                    full_name=user.full_name,
+                    shift="Day",
+                    phone=user.phone or "0000000000",
+                    email=user.email,
+                    status="Active"
+                )
+                db.add(rec)
+                db.commit()
+        elif user.role == UserRole.PHARMACIST:
+            from app.models.staff import Pharmacist
+            import uuid
+            existing_pharm = db.query(Pharmacist).filter(Pharmacist.user_id == user.id).first()
+            if not existing_pharm:
+                pharm = Pharmacist(
+                    pharmacist_id=f"PHAR-{uuid.uuid4().hex[:6].upper()}",
+                    user_id=user.id,
+                    full_name=user.full_name,
+                    license_number=f"RPH-{uuid.uuid4().hex[:6].upper()}",
+                    phone=user.phone or "0000000000",
+                    email=user.email,
+                    status="Active"
+                )
+                db.add(pharm)
+                db.commit()
 
         audit_service.log_action(
             db=db,
