@@ -19,23 +19,7 @@ MediCare-360 implements strict Role-Based Access Control (RBAC) across 6 dedicat
 
 ---
 
-## 🛠️ Tech Stack
 
-### Frontend
-- **Framework:** React 18 with Vite
-- **Styling:** Tailwind CSS + Vanilla CSS Tokens
-- **Icons:** Lucide React
-- **Routing:** React Router DOM (v6)
-- **Data Visualizations:** Recharts
-
-### Backend
-- **Framework:** FastAPI (Python 3.12+)
-- **ORM / Database:** SQLAlchemy 2.0, Alembic, SQLite / PostgreSQL / MongoDB
-- **Validation:** Pydantic v2
-- **Authentication:** OAuth2 with JWT Bearer tokens + Bcrypt password hashing
-- **Testing:** Pytest
-
----
 
 ## 🚀 Getting Started
 
