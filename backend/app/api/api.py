@@ -1,0 +1,22 @@
+from fastapi import APIRouter
+from app.api.routes import (
+    auth, patients, doctors, appointments,
+    medical_records, prescriptions, pharmacy,
+    billing, departments, staff, notifications, reports, audit_logs
+)
+
+api_router = APIRouter()
+
+api_router.include_router(auth.router)
+api_router.include_router(patients.router)
+api_router.include_router(doctors.router)
+api_router.include_router(appointments.router)
+api_router.include_router(medical_records.router)
+api_router.include_router(prescriptions.router)
+api_router.include_router(pharmacy.router)
+api_router.include_router(billing.router)
+api_router.include_router(departments.router)
+api_router.include_router(staff.router)
+api_router.include_router(notifications.router)
+api_router.include_router(reports.router)
+api_router.include_router(audit_logs.router)
