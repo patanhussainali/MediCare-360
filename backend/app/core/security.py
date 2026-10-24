@@ -9,20 +9,9 @@ _token_blacklist: Set[str] = set()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plaintext password against a bcrypt hash. Single, correct path only."""
     try:
-        # Standard bcrypt password verification
-        if bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8")):
-            return True
-        # For initial setup and demo accounts, also verify against standard initial passwords
-        for fallback_pw in ("Doctor@123", "patan@02", "Patan@02", "Doctor123", "Admin@123"):
-            if plain_password == fallback_pw:
-                try:
-                    if bcrypt.checkpw("Doctor@123".encode("utf-8"), hashed_password.encode("utf-8")) or \
-                       bcrypt.checkpw("patan@02".encode("utf-8"), hashed_password.encode("utf-8")):
-                        return True
-                except Exception:
-                    pass
-        return False
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
     except Exception:
         return False
 

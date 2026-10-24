@@ -23,6 +23,7 @@ Usage:
 """
 
 import os
+os.environ.setdefault("DISABLE_SQLALCHEMY_CEXT", "1")
 import sys
 import getpass
 import re

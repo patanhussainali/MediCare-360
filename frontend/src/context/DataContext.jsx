@@ -31,7 +31,7 @@ export const DataProvider = ({ children }) => {
   const [systemSettings, setSystemSettings] = useState({});
   const [loading, setLoading] = useState(true);
 
-  const fetchAllData = useCallback(async () => {
+  const loadLocalData = useCallback(() => {
     try {
       setPatients(getItem(STORAGE_KEYS.PATIENTS, []));
       setDoctors(getItem(STORAGE_KEYS.DOCTORS, []));
@@ -47,31 +47,46 @@ export const DataProvider = ({ children }) => {
       setNotifications(getItem(STORAGE_KEYS.NOTIFICATIONS, []));
       setAuditLogs(getItem(STORAGE_KEYS.AUDIT_LOGS, []));
       setSystemSettings(getItem(STORAGE_KEYS.SYSTEM_SETTINGS, {}));
-
-      // Background sync from backend if authenticated
-      const token = getItem(STORAGE_KEYS.TOKEN, null);
-      if (token) {
-        doctorService.getAllDoctors().then(res => {
-          if (res?.data && res.data.length > 0) setDoctors(res.data);
-        }).catch(() => {});
-        patientService.getAllPatients().then(res => {
-          if (res?.data && res.data.length > 0) setPatients(res.data);
-        }).catch(() => {});
-      }
     } catch (e) {
-      console.error('Error fetching system data:', e);
+      console.error('Error reading local data:', e);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchAllData();
+  const syncBackendData = useCallback(async () => {
+    const token = getItem(STORAGE_KEYS.TOKEN, null);
+    if (!token) return;
+    try {
+      const [docRes, patRes] = await Promise.allSettled([
+        doctorService.getAllDoctors(),
+        patientService.getAllPatients()
+      ]);
+      if (docRes.status === 'fulfilled' && docRes.value?.data?.length > 0) {
+        setDoctors(docRes.value.data);
+      }
+      if (patRes.status === 'fulfilled' && patRes.value?.data?.length > 0) {
+        setPatients(patRes.value.data);
+      }
+    } catch (err) {
+      console.warn('Backend sync failed:', err);
+    }
+  }, []);
 
-    const handleStorageChange = () => fetchAllData();
+  const fetchAllData = useCallback(async () => {
+    loadLocalData();
+    await syncBackendData();
+  }, [loadLocalData, syncBackendData]);
+
+  useEffect(() => {
+    loadLocalData();
+    syncBackendData();
+
+    // Storage event only syncs local state, never triggers remote network requests to avoid loops
+    const handleStorageChange = () => loadLocalData();
     window.addEventListener('medicare360_storage_updated', handleStorageChange);
     return () => window.removeEventListener('medicare360_storage_updated', handleStorageChange);
-  }, [fetchAllData]);
+  }, [loadLocalData, syncBackendData]);
 
   // Derived Real Dashboard Stats
   const stats = {

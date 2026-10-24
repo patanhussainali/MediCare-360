@@ -22,7 +22,6 @@ def test_create_patient(client, auth_headers):
     assert data["last_name"] == "Doe"
     assert "medical_record_number" in data
     assert data["medical_record_number"].startswith("MRN-")
-    return data
 
 
 def test_list_patients(client, auth_headers):

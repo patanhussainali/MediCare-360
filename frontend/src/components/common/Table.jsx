@@ -16,7 +16,6 @@ const Table = ({
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Filter data by search
   const filteredData = data.filter((row) => {
     if (!search) return true;
     return columns.some((col) => {

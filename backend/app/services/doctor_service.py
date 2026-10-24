@@ -60,7 +60,9 @@ class DoctorService:
 
         # Ensure user account exists with bcrypt-hashed password
         user = db.query(User).filter(User.email.ilike(clean_email)).first()
-        raw_password = doctor_in.password or "Doctor@123"
+        # Generate a secure random password if none was provided by the admin
+        import secrets as _secrets
+        raw_password = doctor_in.password or _secrets.token_urlsafe(16)
         hashed = get_password_hash(raw_password)
 
         if not user:

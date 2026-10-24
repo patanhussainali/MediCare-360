@@ -45,11 +45,13 @@ cp .env.example .env
 # Run database migrations and seeds
 python -m app.database.init_db
 
-# Start backend server
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+# Start backend server (Windows)
+venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+# Or cross-platform with active venv:
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
-Backend API will be accessible at: `http://localhost:8000`  
-Interactive Swagger docs: `http://localhost:8000/docs`
+Backend API will be accessible at: `http://127.0.0.1:8000`  
+Interactive Swagger docs: `http://127.0.0.1:8000/docs`
 
 ---
 

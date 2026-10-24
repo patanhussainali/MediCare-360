@@ -28,10 +28,10 @@ class AuthService:
             )
         
         # Check password constraints
-        if len(user_in.password) < 8:
+        if len(user_in.password) < 6:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Password must be at least 8 characters long."
+                detail="Password must be at least 6 characters long."
             )
         
         user = User(
@@ -50,16 +50,21 @@ class AuthService:
         # Ensure linked role profile exists
         if user.role == UserRole.DOCTOR:
             from app.models.doctor import Doctor
+            from app.models.department import Department
             import uuid
             existing_doc = db.query(Doctor).filter(Doctor.user_id == user.id).first()
             if not existing_doc:
+                dept_name = getattr(user_in, 'department', None) or "Cardiology"
+                dept = db.query(Department).filter(Department.name.ilike(f"%{dept_name}%")).first()
+                dept_id = dept.id if dept else 1
+                specialization = dept.name if dept else dept_name
                 doc = Doctor(
                     doctor_id=f"DOC-{uuid.uuid4().hex[:6].upper()}",
                     user_id=user.id,
                     full_name=user.full_name,
-                    specialization="Cardiology",
+                    specialization=specialization,
                     qualification="MD, MBBS",
-                    department_id=1,
+                    department_id=dept_id,
                     experience_years=5,
                     consultation_fee=120.0,
                     phone=user.phone or "0000000000",

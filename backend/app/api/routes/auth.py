@@ -80,10 +80,21 @@ def register(
     db: Session = Depends(get_db)
 ):
     """
-    Register a new user account with role selection (default PATIENT).
+    Public patient self-registration endpoint.
+    Role is always forced to PATIENT regardless of any role field in the request body.
+    Staff accounts must be created by an Admin via POST /users.
     """
+    from app.models.user import UserRole as _UserRole
+    # Always override to PATIENT — clients cannot self-assign privileged roles
+    user_patient = UserCreate(
+        email=user_in.email,
+        password=user_in.password,
+        full_name=user_in.full_name,
+        role=_UserRole.PATIENT,
+        phone_number=user_in.phone_number,
+    )
     client_ip = request.client.host if request.client else None
-    return auth_service.register(db, user_in, ip_address=client_ip)
+    return auth_service.register(db, user_patient, ip_address=client_ip)
 
 
 @router.post("/login", response_model=Token)

@@ -36,7 +36,7 @@ class DoctorBase(BaseModel):
 
 
 class DoctorCreate(DoctorBase):
-    password: Optional[str] = "Doctor@123"
+    password: Optional[str] = None  # If omitted, a secure random password is generated server-side
 
 
 class DoctorUpdate(BaseModel):

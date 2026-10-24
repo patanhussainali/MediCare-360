@@ -34,13 +34,11 @@ const UserManagement = () => {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isResetPassOpen, setIsResetPassOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  // Forms state
   const [createForm, setCreateForm] = useState({
     name: '',
     email: '',
@@ -86,7 +84,6 @@ const UserManagement = () => {
     });
   };
 
-  // 1. Create New User
   const handleCreateUser = async (e) => {
     e.preventDefault();
     setError('');
@@ -111,7 +108,6 @@ const UserManagement = () => {
     }
   };
 
-  // 2. Open Edit User Modal
   const openEditModal = (user) => {
     setSelectedUser(user);
     setEditForm({
@@ -125,7 +121,6 @@ const UserManagement = () => {
     setIsEditOpen(true);
   };
 
-  // 3. Save Edit User & Role Change
   const handleUpdateUser = async (e) => {
     e.preventDefault();
     setError('');
@@ -141,7 +136,6 @@ const UserManagement = () => {
     }
   };
 
-  // 4. Open Reset Password Modal
   const openResetPassModal = (user) => {
     setSelectedUser(user);
     setNewPassword('');
@@ -149,7 +143,6 @@ const UserManagement = () => {
     setIsResetPassOpen(true);
   };
 
-  // 5. Save Password Reset
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setError('');
@@ -165,7 +158,6 @@ const UserManagement = () => {
     }
   };
 
-  // 6. Toggle Status (Activate / Deactivate)
   const handleToggleStatus = async (user) => {
     setError('');
     setSuccessMsg('');
@@ -180,7 +172,6 @@ const UserManagement = () => {
     }
   };
 
-  // 7. Delete User
   const handleDeleteUser = async (user) => {
     if (window.confirm(`Are you sure you want to permanently delete account for ${user.name} (${user.email})?`)) {
       try {
@@ -194,21 +185,23 @@ const UserManagement = () => {
     }
   };
 
-  // Stats calculation
   const totalUsers = usersList.length;
   const activeUsers = usersList.filter(u => u.status === 'Active').length;
   const doctorCount = usersList.filter(u => u.role === 'DOCTOR').length;
   const staffCount = usersList.filter(u => ['NURSE', 'RECEPTIONIST', 'PHARMACIST', 'LAB_TECHNICIAN'].includes(u.role)).length;
 
-  // Filtered list
   const filteredUsers = usersList.filter(u => {
     const matchesRole = selectedRoleFilter === 'ALL' || u.role === selectedRoleFilter;
     const q = searchQuery.toLowerCase();
+    const name = u.name || u.full_name || '';
+    const email = u.email || '';
+    const id = String(u.id || '');
+    const dept = u.department || '';
     const matchesSearch = !q ||
-      u.name.toLowerCase().includes(q) ||
-      u.email.toLowerCase().includes(q) ||
-      u.id.toLowerCase().includes(q) ||
-      (u.department && u.department.toLowerCase().includes(q));
+      name.toLowerCase().includes(q) ||
+      email.toLowerCase().includes(q) ||
+      id.toLowerCase().includes(q) ||
+      dept.toLowerCase().includes(q);
     return matchesRole && matchesSearch;
   });
 
@@ -222,7 +215,7 @@ const UserManagement = () => {
       header: 'Full Name',
       render: (r) => (
         <div>
-          <span className="font-bold text-slate-800 dark:text-white block">{r.name}</span>
+          <span className="font-bold text-slate-800 dark:text-white block">{r.name || r.full_name || 'Unnamed User'}</span>
           <span className="text-[11px] text-slate-400">{r.phone || 'No phone'}</span>
         </div>
       )
@@ -252,11 +245,11 @@ const UserManagement = () => {
     },
     {
       header: 'Status',
-      render: (r) => <Badge status={r.status} />
+      render: (r) => <Badge status={r.status || (r.is_active ? 'Active' : 'Inactive')} />
     },
     {
       header: 'Created Date',
-      render: (r) => formatDate(r.createdAt)
+      render: (r) => formatDate(r.createdAt || r.created_at)
     },
     {
       header: 'Actions',

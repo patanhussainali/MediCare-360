@@ -14,7 +14,7 @@ class NurseBase(BaseModel):
 
 class NurseCreate(NurseBase):
     license_number: str
-    password: Optional[str] = "Nurse@123"
+    password: Optional[str] = None
 
 class NurseUpdate(BaseModel):
     shift: Optional[str] = None
@@ -39,7 +39,7 @@ class ReceptionistBase(BaseModel):
     status: str = "Active"
 
 class ReceptionistCreate(ReceptionistBase):
-    password: Optional[str] = "Receptionist@123"
+    password: Optional[str] = None
 
 class ReceptionistUpdate(BaseModel):
     shift: Optional[str] = None
@@ -62,7 +62,7 @@ class PharmacistBase(BaseModel):
     status: str = "Active"
 
 class PharmacistCreate(PharmacistBase):
-    password: Optional[str] = "Pharmacist@123"
+    password: Optional[str] = None
 
 class PharmacistUpdate(BaseModel):
     status: Optional[str] = None

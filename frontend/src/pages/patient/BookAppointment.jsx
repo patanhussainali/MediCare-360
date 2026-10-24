@@ -21,7 +21,6 @@ const BookAppointment = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Filter available doctors by selected department
   const filteredDoctors = doctors.filter(d => d.status === 'Active' && (!selectedDepartment || d.department === selectedDepartment));
 
   const availableSlots = [

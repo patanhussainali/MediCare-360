@@ -10,6 +10,25 @@ import { axiosInstance } from './apiClient.js';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/storage.js';
 import { logAuditEvent } from './auditService.js';
 
+export const normalizeUser = (u) => {
+  if (!u) return null;
+  const isActive = typeof u.is_active === 'boolean' ? u.is_active : (u.status === 'Active' || u.status === true);
+  return {
+    id: u.id,
+    name: u.full_name || u.name || 'Unnamed User',
+    full_name: u.full_name || u.name || 'Unnamed User',
+    email: u.email || '',
+    role: (u.role || 'PATIENT').toUpperCase(),
+    phone: u.phone || u.phone_number || '',
+    department: u.department || '',
+    status: isActive ? 'Active' : 'Inactive',
+    is_active: isActive,
+    createdAt: u.created_at || u.createdAt || new Date().toISOString(),
+    created_at: u.created_at || u.createdAt || new Date().toISOString(),
+    profileId: u.profile_id || u.profileId || null,
+  };
+};
+
 export const userService = {
   /**
    * Get all users (admin only — backend enforces role check).
@@ -17,9 +36,10 @@ export const userService = {
   async getAllUsers() {
     try {
       const response = await axiosInstance.get('/users');
-      return { success: true, data: response.data };
+      const normalized = (response.data || []).map(normalizeUser);
+      return { success: true, data: normalized };
     } catch (err) {
-      throw new Error(err?.response?.data?.detail || 'Failed to fetch users');
+      throw new Error(err?.response?.data?.detail || err.message || 'Failed to fetch users');
     }
   },
 
@@ -42,6 +62,7 @@ export const userService = {
           password: rawPassword,
           phone_number: userData.phone || null,
           role: role,
+          department: userData.department || null,
         });
       } catch (adminEndpointErr) {
         if (adminEndpointErr?.response?.status === 404 || adminEndpointErr?.response?.status === 401) {
@@ -51,14 +72,15 @@ export const userService = {
             password: rawPassword,
             phone_number: userData.phone || null,
             role: role,
+            department: userData.department || null,
           });
         } else {
           throw adminEndpointErr;
         }
       }
 
-      const newUser = response.data;
-      logAuditEvent('ADMIN_USER_CREATE', `Created new user ${newUser.full_name} with role ${newUser.role}`, adminUser?.id, adminUser?.name);
+      const newUser = normalizeUser(response.data);
+      logAuditEvent('ADMIN_USER_CREATE', `Created new user ${newUser.name} with role ${newUser.role}`, adminUser?.id, adminUser?.name);
       return { success: true, data: newUser };
     } catch (err) {
       throw new Error(err?.response?.data?.detail || err.message || 'Failed to create user');
@@ -77,16 +99,16 @@ export const userService = {
       if (updateData.role) payload.role = updateData.role.toUpperCase();
 
       const response = await axiosInstance.patch(`/users/${userId}`, payload);
-      const updatedUser = response.data;
+      const updatedUser = normalizeUser(response.data);
 
-      logAuditEvent('USER_UPDATE', `Updated user details for ${updatedUser.full_name}`, adminUser?.id, adminUser?.name);
+      logAuditEvent('USER_UPDATE', `Updated user details for ${updatedUser.name}`, adminUser?.id, adminUser?.name);
 
       // Sync current session if the logged-in user was updated
       const currentUser = getItem(STORAGE_KEYS.CURRENT_USER, null);
       if (currentUser && (currentUser.id === userId || String(currentUser.id) === String(userId))) {
         const updatedSession = {
           ...currentUser,
-          name: updatedUser.full_name || currentUser.name,
+          name: updatedUser.name || currentUser.name,
           email: updatedUser.email || currentUser.email,
           role: updatedUser.role || currentUser.role,
         };
@@ -95,7 +117,7 @@ export const userService = {
 
       return { success: true, data: updatedUser };
     } catch (err) {
-      throw new Error(err?.response?.data?.detail || 'Failed to update user');
+      throw new Error(err?.response?.data?.detail || err.message || 'Failed to update user');
     }
   },
 
@@ -112,18 +134,18 @@ export const userService = {
     try {
       const isActive = status === 'Active';
       const response = await axiosInstance.patch(`/users/${userId}`, { is_active: isActive });
-      const updatedUser = response.data;
+      const updatedUser = normalizeUser(response.data);
 
       logAuditEvent(
         'USER_STATUS_CHANGE',
-        `User ${updatedUser.full_name} (${updatedUser.email}) status changed to ${status}`,
+        `User ${updatedUser.name} (${updatedUser.email}) status changed to ${status}`,
         adminUser?.id,
         adminUser?.name
       );
 
       return { success: true, data: updatedUser };
     } catch (err) {
-      throw new Error(err?.response?.data?.detail || 'Failed to update user status');
+      throw new Error(err?.response?.data?.detail || err.message || 'Failed to update user status');
     }
   },
 

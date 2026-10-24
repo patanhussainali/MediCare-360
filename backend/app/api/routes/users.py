@@ -107,10 +107,10 @@ def update_user(
         user.role = update_data.role
 
     if update_data.password is not None:
-        if len(update_data.password) < 8:
+        if len(update_data.password) < 6:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Password must be at least 8 characters long."
+                detail="Password must be at least 6 characters long."
             )
         # Hash password with bcrypt — plaintext is discarded after this point
         user.hashed_password = get_password_hash(update_data.password)

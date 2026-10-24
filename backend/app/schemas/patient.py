@@ -30,7 +30,7 @@ class PatientBase(BaseModel):
 
 
 class PatientCreate(PatientBase):
-    password: Optional[str] = "Patient@123"
+    password: Optional[str] = None
     medical_record_number: Optional[str] = None
 
 

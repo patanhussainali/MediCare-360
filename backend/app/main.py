@@ -1,7 +1,10 @@
+import os
+os.environ.setdefault("DISABLE_SQLALCHEMY_CEXT", "1")
+
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -73,7 +76,7 @@ def create_application() -> FastAPI:
     application.add_middleware(
         CORSMiddleware,
         allow_origins=["*"] if allow_all_origins else cors_origins,
-        allow_origin_regex=None if allow_all_origins else r"^https:\/\/.*\.netlify\.app$",
+        allow_origin_regex=None if allow_all_origins else r"^https:\/\/.*(\.netlify\.app|\.railway\.app|\.up\.railway\.app|\.vercel\.app)$",
         allow_credentials=not allow_all_origins,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -119,6 +122,15 @@ def create_application() -> FastAPI:
             "service": settings.PROJECT_NAME,
             "version": settings.VERSION
         }
+
+    # --- Convenience Redirects ---
+    @application.get("/", include_in_schema=False)
+    async def root_redirect():
+        return RedirectResponse(url=f"{settings.API_V1_STR}/docs")
+
+    @application.get("/docs", include_in_schema=False)
+    async def docs_redirect():
+        return RedirectResponse(url=f"{settings.API_V1_STR}/docs")
 
     return application
 

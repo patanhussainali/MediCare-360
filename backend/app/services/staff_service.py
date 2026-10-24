@@ -37,7 +37,7 @@ class StaffService:
         if not user:
             user = User(
                 email=nurse_in.email.lower(),
-                hashed_password=get_password_hash(nurse_in.password or "Nurse@123"),
+                hashed_password=get_password_hash(nurse_in.password or __import__('secrets').token_urlsafe(16)),
                 full_name=nurse_in.full_name,
                 role=UserRole.NURSE,
                 phone=nurse_in.phone,
@@ -79,7 +79,7 @@ class StaffService:
         if not user:
             user = User(
                 email=rec_in.email.lower(),
-                hashed_password=get_password_hash(rec_in.password or "Receptionist@123"),
+                hashed_password=get_password_hash(rec_in.password or __import__('secrets').token_urlsafe(16)),
                 full_name=rec_in.full_name,
                 role=UserRole.RECEPTIONIST,
                 phone=rec_in.phone,
@@ -125,7 +125,7 @@ class StaffService:
         if not user:
             user = User(
                 email=pharm_in.email.lower(),
-                hashed_password=get_password_hash(pharm_in.password or "Pharmacist@123"),
+                hashed_password=get_password_hash(pharm_in.password or __import__('secrets').token_urlsafe(16)),
                 full_name=pharm_in.full_name,
                 role=UserRole.PHARMACIST,
                 phone=pharm_in.phone,

@@ -29,7 +29,21 @@ def setup_test_db():
     test_db = TestingSessionLocal()
     try:
         from app.database.init_db import init_db
+        from app.models.user import User, UserRole
+        from app.core.security import get_password_hash
         init_db(test_db)
+        admin = test_db.query(User).filter(User.email == "admin@medicare360.com").first()
+        if not admin:
+            admin = User(
+                email="admin@medicare360.com",
+                hashed_password=get_password_hash("Admin@123"),
+                full_name="Test Administrator",
+                role=UserRole.ADMIN,
+                is_active=True,
+                is_verified=True
+            )
+            test_db.add(admin)
+            test_db.commit()
     finally:
         test_db.close()
     yield

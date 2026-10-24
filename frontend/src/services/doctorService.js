@@ -76,7 +76,7 @@ export const doctorService = {
    * and the Doctor profile in the database.
    */
   async createDoctor(doctorData, adminUser) {
-    const rawPassword = doctorData.password || 'Doctor@123';
+    const rawPassword = doctorData.password || null; // Backend generates a secure random password if omitted
     const cleanEmail = doctorData.email.trim().toLowerCase();
     const docName = doctorData.name.startsWith('Dr.') ? doctorData.name : `Dr. ${doctorData.name}`;
 

@@ -18,6 +18,7 @@ class UserCreate(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=255)
     role: UserRole = UserRole.PATIENT
     phone_number: Optional[str] = None  # Alias used for convenience; stored as phone
+    department: Optional[str] = None
 
     @property
     def phone(self) -> Optional[str]:

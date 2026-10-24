@@ -66,7 +66,7 @@ export const hashPasswordSync = (password, salt = 'mc360_default_salt') => {
  * Handles three formats:
  *   1. $sha256$<salt>$<hash>  — stored by hashPassword() using Web Crypto SHA-256
  *   2. $sha256$<salt>$<hash>  — stored by the pure-JS fallback inside hashPassword()
- *   3. Plain text             — legacy/seeded accounts (e.g. admin 'patan@02')
+ *   3. Plain text             — legacy format (pre-API migration; no longer used in current auth flow)
  */
 export const verifyPassword = async (plainPassword, storedHashOrPlain) => {
   if (!plainPassword || !storedHashOrPlain) return false;

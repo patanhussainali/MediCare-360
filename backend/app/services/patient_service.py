@@ -75,7 +75,7 @@ class PatientService:
         if not user:
             user = User(
                 email=patient_in.email.lower(),
-                hashed_password=get_password_hash(patient_in.password or "Patient@123"),
+                hashed_password=get_password_hash(patient_in.password or __import__('secrets').token_urlsafe(16)),
                 full_name=patient_in.full_name,
                 role=UserRole.PATIENT,
                 phone=patient_in.phone,
