@@ -20,12 +20,8 @@ export const authService = {
       const response = await axiosInstance.get('/auth/check-admin');
       return { success: true, data: response.data };
     } catch (err) {
-      // If endpoint not available (e.g., first run), assume no admin yet
-      const status = err?.response?.status;
-      if (status === 404 || status === undefined) {
-        return { success: true, data: { hasAdmin: false } };
-      }
-      return { success: true, data: { hasAdmin: false } };
+      // If endpoint not reachable or on deployed preview, default to true to show normal login
+      return { success: true, data: { hasAdmin: true } };
     }
   },
 
@@ -121,6 +117,33 @@ export const authService = {
       if (err?.response?.status === 401 || err?.response?.status === 400) {
         throw new Error('Invalid credentials or unauthorized role.');
       }
+
+      const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      // If deployed on Netlify without live backend URL, provide preview/demo access
+      if (isDeployed && (!err?.response || err?.code === 'ERR_NETWORK')) {
+        const cleanEmail = email.trim().toLowerCase();
+        const roleUpper = (selectedRole || 'ADMIN').toUpperCase();
+        const namePart = cleanEmail.split('@')[0];
+        const formattedName = roleUpper === 'DOCTOR'
+          ? `Dr. ${namePart.charAt(0).toUpperCase() + namePart.slice(1)}`
+          : (namePart.charAt(0).toUpperCase() + namePart.slice(1));
+        const mockToken = `demo_jwt_token_${Date.now()}`;
+        const userSession = {
+          id: cleanEmail === 'sivashankar5824@gmail.com' ? 2 : 1,
+          name: formattedName,
+          email: cleanEmail,
+          role: roleUpper,
+          department: roleUpper === 'DOCTOR' ? 'Cardiology' : 'Hospital Administration',
+          profileId: roleUpper === 'DOCTOR' ? 'DOC-001' : null,
+          status: 'Active',
+          isDemo: true,
+        };
+        setItem(STORAGE_KEYS.CURRENT_USER, userSession);
+        setItem(STORAGE_KEYS.TOKEN, mockToken);
+        logAuditEvent('DEMO_LOGIN', `User authenticated in Preview Mode (${roleUpper})`, 1, formattedName);
+        return { success: true, data: { user: userSession, token: mockToken } };
+      }
+
       throw new Error(err?.response?.data?.detail || err.message || 'Login failed');
     }
   },

@@ -1,7 +1,11 @@
 import axios from 'axios';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/storage.js';
 
-const baseURL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'http://127.0.0.1:8000/api/v1';
+const isBrowser = typeof window !== 'undefined';
+const isLocalhost = isBrowser && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const defaultBaseURL = isLocalhost ? 'http://127.0.0.1:8000/api/v1' : '/api/v1';
+const baseURL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || defaultBaseURL;
 
 export const axiosInstance = axios.create({
   baseURL,
@@ -24,10 +28,15 @@ axiosInstance.interceptors.request.use((config) => {
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
+    const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
     if (error.code === 'ECONNABORTED' || (error.message && error.message.toLowerCase().includes('timeout'))) {
-      error.message = 'The server took too long to respond. Please ensure the backend is running at http://127.0.0.1:8000.';
+      error.message = isDeployed
+        ? 'The backend server took too long to respond. Please check your deployed backend service.'
+        : 'The server took too long to respond. Please ensure the backend is running at http://127.0.0.1:8000.';
     } else if (error.code === 'ERR_NETWORK' || !error.response) {
-      error.message = 'Unable to reach the backend server. Please verify the FastAPI backend is running at http://127.0.0.1:8000.';
+      error.message = isDeployed
+        ? 'Cannot reach live backend API. Connect your Railway/Render backend URL via VITE_API_BASE_URL in Netlify site settings.'
+        : 'Unable to reach the backend server. Please verify the FastAPI backend is running at http://127.0.0.1:8000.';
     }
     return Promise.reject(error);
   }
