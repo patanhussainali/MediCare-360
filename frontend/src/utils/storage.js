@@ -61,12 +61,12 @@ export const initializeStorage = () => {
   if (!initialized) {
     localStorage.setItem(STORAGE_KEYS.AUDIT_LOGS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.SYSTEM_SETTINGS, JSON.stringify({
-      hospitalName: 'MediCare360 Medical Center',
+      hospitalName: 'Kalasalingam Hospital',
       tagline: 'Excellence in Compassionate Healthcare',
-      address: '742 Evergreen Health Boulevard, Medical District',
-      phone: '+1 (800) 555-3600',
-      email: 'contact@medicare360.org',
-      emergencyContact: '+1 (800) 911-3600',
+      address: 'Kalasalingam Hospital',
+      phone: '9182281940',
+      email: 'hussainalipatan@gmail.com',
+      emergencyContact: '9182281940',
       operatingHours: '24/7 Emergency & Inpatient | Outpatient: 8:00 AM - 8:00 PM',
       currency: 'USD ($)',
       taxRate: 5,

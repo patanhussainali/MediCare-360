@@ -7,12 +7,12 @@ const SystemSettings = () => {
   const { systemSettings, resetData, refreshData } = useData();
 
   const [form, setForm] = useState({
-    hospitalName: systemSettings.hospitalName || 'MediCare360 Medical Center',
+    hospitalName: systemSettings.hospitalName || 'Kalasalingam Hospital',
     tagline: systemSettings.tagline || 'Excellence in Compassionate Healthcare',
-    address: systemSettings.address || '742 Evergreen Health Boulevard, Medical District',
-    phone: systemSettings.phone || '+1 (800) 555-3600',
-    emergencyContact: systemSettings.emergencyContact || '+1 (800) 911-3600',
-    email: systemSettings.email || 'contact@medicare360.org',
+    address: systemSettings.address || 'Kalasalingam Hospital',
+    phone: systemSettings.phone || '9182281940',
+    emergencyContact: systemSettings.emergencyContact || '9182281940',
+    email: systemSettings.email || 'hussainalipatan@gmail.com',
     operatingHours: systemSettings.operatingHours || '24/7 Emergency | Outpatient: 8:00 AM - 8:00 PM',
     taxRate: systemSettings.taxRate || 5,
   });

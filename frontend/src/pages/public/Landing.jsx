@@ -69,7 +69,7 @@ const Landing = () => {
         <div className="flex items-center gap-2 max-w-7xl mx-auto w-full justify-between">
           <div className="flex items-center gap-2">
             <PhoneCall className="w-4 h-4 animate-bounce" />
-            <span>24/7 Emergency Trauma &amp; Ambulance Helpline: <strong>+1 (800) 911-3600</strong></span>
+            <span>24/7 Emergency Trauma &amp; Ambulance Helpline: <strong>9182281940</strong></span>
           </div>
           <span className="hidden sm:inline bg-rose-800/60 px-3 py-1 rounded-full border border-rose-400/30">Immediate Care Available</span>
         </div>
@@ -128,8 +128,9 @@ const Landing = () => {
           </div>
           <div>
             <h5 className="text-white font-bold mb-3 text-xs uppercase">Emergency Contact</h5>
-            <p className="text-xs text-white font-semibold mb-1">+1 (800) 911-3600</p>
-            <p className="text-xs text-slate-300">742 Evergreen Health Boulevard, Medical District</p>
+            <p className="text-xs text-white font-semibold mb-1">9182281940</p>
+            <p className="text-xs text-slate-300 mb-1">Kalasalingam Hospital</p>
+            <p className="text-xs text-slate-400">hussainalipatan@gmail.com</p>
           </div>
         </div>
         <div className="max-w-7xl mx-auto pt-6 border-t border-deep-forest-700 dark:border-slate-800 text-center text-xs text-slate-400">

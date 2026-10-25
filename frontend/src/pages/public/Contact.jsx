@@ -30,22 +30,22 @@ const Contact = () => {
                 <MapPin className="w-5 h-5 text-hospital-600 shrink-0 mt-1" />
                 <div>
                   <h3 className="font-bold text-slate-800 dark:text-white">Main Hospital Address</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">742 Evergreen Health Boulevard, Medical District, Suite 300</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">Kalasalingam Hospital</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
                 <Phone className="w-5 h-5 text-hospital-600 shrink-0 mt-1" />
                 <div>
                   <h3 className="font-bold text-slate-800 dark:text-white">Phone &amp; Emergency Triage</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">General Inquiries: +1 (800) 555-3600</p>
-                  <p className="text-rose-600 text-xs font-bold mt-0.5">Emergency Helpline: +1 (800) 911-3600</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">General Inquiries: 9182281940</p>
+                  <p className="text-rose-600 text-xs font-bold mt-0.5">Emergency Helpline: 9182281940</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
                 <Mail className="w-5 h-5 text-hospital-600 shrink-0 mt-1" />
                 <div>
                   <h3 className="font-bold text-slate-800 dark:text-white">Email Communications</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">contact@medicare360.org</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">hussainalipatan@gmail.com</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
