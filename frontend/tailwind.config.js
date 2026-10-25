@@ -8,7 +8,23 @@ export default {
   ],
   darkMode: 'class',
   theme: {
+    // Responsive container with default padding
+    container: {
+      center: true,
+      padding: {
+        DEFAULT: '1rem',
+        sm: '1.5rem',
+        md: '2rem',
+        lg: '2.5rem',
+        xl: '3rem',
+        '2xl': '4rem',
+      },
+    },
     extend: {
+      // Extra-small breakpoint for small phones (320px – 474px)
+      screens: {
+        'xs': '475px',
+      },
       colors: {
         // Master Exact Theme Color Tokens
         border: '#26272D',
