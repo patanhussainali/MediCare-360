@@ -172,6 +172,39 @@ export const authService = {
 
       return { success: true, data: response.data };
     } catch (err) {
+      const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      const isBackendUnreachable = !err?.response || err?.code === 'ERR_NETWORK' || err?.response?.status === 404 || err.message?.includes('Live backend is not connected');
+
+      if (isDeployed && isBackendUnreachable) {
+        console.warn('Backend API unreachable. Registering patient in Preview Mode.');
+        const cleanEmail = patientData.email.trim().toLowerCase();
+        const newPatient = {
+          id: Date.now(),
+          patientId: `PAT-${Date.now().toString().slice(-4)}`,
+          name: patientData.name,
+          full_name: patientData.name,
+          email: cleanEmail,
+          phone: patientData.phone || '',
+          gender: patientData.gender || 'Other',
+          dateOfBirth: patientData.dateOfBirth || '',
+          bloodGroup: patientData.bloodGroup || '',
+          role: 'PATIENT',
+          status: 'Active',
+          createdAt: new Date().toISOString(),
+        };
+
+        const localUsers = getItem(STORAGE_KEYS.USERS, []);
+        localUsers.push(newPatient);
+        setItem(STORAGE_KEYS.USERS, localUsers);
+
+        const localPatients = getItem(STORAGE_KEYS.PATIENTS, []);
+        localPatients.push(newPatient);
+        setItem(STORAGE_KEYS.PATIENTS, localPatients);
+
+        logAuditEvent('PATIENT_REGISTER', `New patient registered in Preview Mode: ${patientData.name}`, newPatient.id, patientData.name);
+        return { success: true, data: newPatient };
+      }
+
       const detail = err?.response?.data?.detail || err.message || 'Registration failed';
       throw new Error(detail);
     }

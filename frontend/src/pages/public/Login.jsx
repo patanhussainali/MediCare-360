@@ -18,7 +18,7 @@ const ROLE_CONFIG = {
     icon: Shield,
     defaultEmail: '',
     defaultPass: '',
-    placeholder: 'hussainalipatan@gmail.com',
+    placeholder: 'Enter email address',
     targetDashboard: '/admin/dashboard',
   },
   DOCTOR: {
@@ -29,7 +29,7 @@ const ROLE_CONFIG = {
     icon: Stethoscope,
     defaultEmail: '',
     defaultPass: '',
-    placeholder: 'doctor@medicare360.com',
+    placeholder: 'Enter email address',
     targetDashboard: '/doctor/dashboard',
   },
   NURSE: {
@@ -40,7 +40,7 @@ const ROLE_CONFIG = {
     icon: HeartPulse,
     defaultEmail: '',
     defaultPass: '',
-    placeholder: 'nurse@medicare360.com',
+    placeholder: 'Enter email address',
     targetDashboard: '/nurse/dashboard',
   },
   RECEPTIONIST: {
@@ -51,7 +51,7 @@ const ROLE_CONFIG = {
     icon: UserCheck,
     defaultEmail: '',
     defaultPass: '',
-    placeholder: 'receptionist@medicare360.com',
+    placeholder: 'Enter email address',
     targetDashboard: '/receptionist/dashboard',
   },
   PHARMACIST: {
@@ -62,7 +62,7 @@ const ROLE_CONFIG = {
     icon: Pill,
     defaultEmail: '',
     defaultPass: '',
-    placeholder: 'pharmacist@medicare360.com',
+    placeholder: 'Enter email address',
     targetDashboard: '/pharmacist/dashboard',
   },
   LAB_TECHNICIAN: {
@@ -73,7 +73,7 @@ const ROLE_CONFIG = {
     icon: FlaskConical,
     defaultEmail: '',
     defaultPass: '',
-    placeholder: 'lab@medicare360.com',
+    placeholder: 'Enter email address',
     targetDashboard: '/admin/reports',
   },
   PATIENT: {
@@ -84,7 +84,7 @@ const ROLE_CONFIG = {
     icon: User,
     defaultEmail: '',
     defaultPass: '',
-    placeholder: 'patient@example.com',
+    placeholder: 'Enter email address',
     targetDashboard: '/patient/dashboard',
   },
 };

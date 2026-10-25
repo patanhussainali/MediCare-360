@@ -73,6 +73,11 @@ const UserManagement = () => {
 
   useEffect(() => {
     fetchUsers();
+    const handleStorageUpdate = () => {
+      fetchUsers();
+    };
+    window.addEventListener('medicare360_storage_updated', handleStorageUpdate);
+    return () => window.removeEventListener('medicare360_storage_updated', handleStorageUpdate);
   }, []);
 
   const handleRoleChangeInCreate = (newRole) => {

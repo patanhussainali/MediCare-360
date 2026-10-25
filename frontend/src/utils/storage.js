@@ -3,6 +3,7 @@
 // Authentication is handled exclusively by the FastAPI backend + database.
 
 const STORAGE_KEYS = {
+  USERS: 'medicare360_users',
   PATIENTS: 'medicare360_patients',
   DOCTORS: 'medicare360_doctors',
   NURSES: 'medicare360_nurses',
@@ -25,6 +26,7 @@ const STORAGE_KEYS = {
 
 export const getItem = (key, fallback = []) => {
   try {
+    if (!key) return fallback;
     const item = localStorage.getItem(key);
     return item ? JSON.parse(item) : fallback;
   } catch (error) {
@@ -35,6 +37,7 @@ export const getItem = (key, fallback = []) => {
 
 export const setItem = (key, value) => {
   try {
+    if (!key) return;
     localStorage.setItem(key, JSON.stringify(value));
     window.dispatchEvent(new Event('medicare360_storage_updated'));
   } catch (error) {
@@ -44,6 +47,7 @@ export const setItem = (key, value) => {
 
 export const removeItem = (key) => {
   try {
+    if (!key) return;
     localStorage.removeItem(key);
     window.dispatchEvent(new Event('medicare360_storage_updated'));
   } catch (error) {
@@ -59,6 +63,7 @@ export const removeItem = (key) => {
 export const initializeStorage = () => {
   const initialized = localStorage.getItem('medicare360_initialized');
   if (!initialized) {
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.AUDIT_LOGS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.SYSTEM_SETTINGS, JSON.stringify({
       hospitalName: 'Kalasalingam Hospital',
@@ -77,13 +82,45 @@ export const initializeStorage = () => {
 
 export const resetSystemStorage = () => {
   // Clears only non-auth local state; auth tokens are removed separately on logout
-  Object.values(STORAGE_KEYS).forEach(key => {
+  const keysToRemove = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (
+        k &&
+        k !== STORAGE_KEYS.CURRENT_USER &&
+        k !== STORAGE_KEYS.TOKEN &&
+        k !== STORAGE_KEYS.REFRESH_TOKEN
+      ) {
+        if (k.startsWith('medicare360_') || k === 'undefined') {
+          keysToRemove.push(k);
+        }
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+  } catch (err) {
+    console.error('Error scanning localStorage keys:', err);
+  }
+
+  // Explicitly remove all known data keys
+  Object.values(STORAGE_KEYS).forEach((key) => {
     if (key !== STORAGE_KEYS.CURRENT_USER && key !== STORAGE_KEYS.TOKEN && key !== STORAGE_KEYS.REFRESH_TOKEN) {
-      localStorage.removeItem(key);
+      try {
+        localStorage.removeItem(key);
+      } catch (e) {
+        // ignore
+      }
     }
   });
-  localStorage.removeItem('medicare360_initialized');
+
+  try {
+    localStorage.removeItem('undefined');
+    localStorage.removeItem('medicare360_initialized');
+    localStorage.removeItem('medicare360_users');
+  } catch (e) {}
+
   initializeStorage();
+  window.dispatchEvent(new Event('medicare360_storage_updated'));
 };
 
 export { STORAGE_KEYS };

@@ -42,7 +42,14 @@ export const userService = {
       const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
       const isBackendUnreachable = !err?.response || err?.code === 'ERR_NETWORK' || err?.response?.status === 404;
       if (isDeployed && isBackendUnreachable) {
-        const localUsers = getItem(STORAGE_KEYS.USERS, []);
+        let localUsers = getItem(STORAGE_KEYS.USERS, []);
+        // Legacy migration/cleanup if users were saved under undefined key
+        try {
+          const legacy = localStorage.getItem('undefined');
+          if (legacy) {
+            localStorage.removeItem('undefined');
+          }
+        } catch (e) {}
         return { success: true, data: localUsers.map(normalizeUser) };
       }
       throw new Error(err?.response?.data?.detail || err.message || 'Failed to fetch users');
@@ -241,8 +248,32 @@ export const userService = {
       const isBackendUnreachable = !err?.response || err?.code === 'ERR_NETWORK' || err?.response?.status === 404;
       if (isDeployed && isBackendUnreachable) {
         const localUsers = getItem(STORAGE_KEYS.USERS, []);
+        const toDelete = localUsers.find((u) => u.id === userId || String(u.id) === String(userId));
         const filtered = localUsers.filter((u) => u.id !== userId && String(u.id) !== String(userId));
         setItem(STORAGE_KEYS.USERS, filtered);
+
+        // Clean up from role stores to keep counts and lists synchronized
+        if (toDelete) {
+          const email = (toDelete.email || '').toLowerCase();
+          const cleanRoleList = (key) => {
+            const list = getItem(key, []);
+            const updated = list.filter((item) => {
+              if (item.id === userId || String(item.id) === String(userId)) return false;
+              if (item.userId === userId || String(item.userId) === String(userId)) return false;
+              if (email && item.email && item.email.toLowerCase() === email) return false;
+              return true;
+            });
+            if (updated.length !== list.length) {
+              setItem(key, updated);
+            }
+          };
+          cleanRoleList(STORAGE_KEYS.DOCTORS);
+          cleanRoleList(STORAGE_KEYS.PATIENTS);
+          cleanRoleList(STORAGE_KEYS.NURSES);
+          cleanRoleList(STORAGE_KEYS.RECEPTIONISTS);
+          cleanRoleList(STORAGE_KEYS.PHARMACISTS);
+        }
+
         logAuditEvent('USER_DELETED', `Admin deleted user ID ${userId} [Preview Mode]`, adminUser?.id, adminUser?.name);
         return { success: true, data: { success: true } };
       }
