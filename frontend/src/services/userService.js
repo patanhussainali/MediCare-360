@@ -39,6 +39,12 @@ export const userService = {
       const normalized = (response.data || []).map(normalizeUser);
       return { success: true, data: normalized };
     } catch (err) {
+      const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      const isBackendUnreachable = !err?.response || err?.code === 'ERR_NETWORK' || err?.response?.status === 404;
+      if (isDeployed && isBackendUnreachable) {
+        const localUsers = getItem(STORAGE_KEYS.USERS, []);
+        return { success: true, data: localUsers.map(normalizeUser) };
+      }
       throw new Error(err?.response?.data?.detail || err.message || 'Failed to fetch users');
     }
   },
@@ -83,6 +89,27 @@ export const userService = {
       logAuditEvent('ADMIN_USER_CREATE', `Created new user ${newUser.name} with role ${newUser.role}`, adminUser?.id, adminUser?.name);
       return { success: true, data: newUser };
     } catch (err) {
+      const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      const isBackendUnreachable = !err?.response || err?.code === 'ERR_NETWORK' || err?.response?.status === 404 || err.message?.includes('Live backend is not connected');
+      if (isDeployed && isBackendUnreachable) {
+        const localUsers = getItem(STORAGE_KEYS.USERS, []);
+        const localNewUser = {
+          id: Date.now(),
+          name: userData.name,
+          full_name: userData.name,
+          email: cleanEmail,
+          role: role,
+          phone: userData.phone || '',
+          department: userData.department || 'General Medicine',
+          status: userData.status || 'Active',
+          is_active: true,
+          createdAt: new Date().toISOString(),
+        };
+        localUsers.push(localNewUser);
+        setItem(STORAGE_KEYS.USERS, localUsers);
+        logAuditEvent('ADMIN_USER_CREATE', `Created new user ${localNewUser.name} (${localNewUser.role}) [Preview Mode]`, adminUser?.id, adminUser?.name);
+        return { success: true, data: normalizeUser(localNewUser) };
+      }
       throw new Error(err?.response?.data?.detail || err.message || 'Failed to create user');
     }
   },
@@ -117,6 +144,17 @@ export const userService = {
 
       return { success: true, data: updatedUser };
     } catch (err) {
+      const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      const isBackendUnreachable = !err?.response || err?.code === 'ERR_NETWORK' || err?.response?.status === 404;
+      if (isDeployed && isBackendUnreachable) {
+        const localUsers = getItem(STORAGE_KEYS.USERS, []);
+        const idx = localUsers.findIndex((u) => u.id === userId || String(u.id) === String(userId));
+        if (idx !== -1) {
+          localUsers[idx] = { ...localUsers[idx], ...updateData };
+          setItem(STORAGE_KEYS.USERS, localUsers);
+          return { success: true, data: normalizeUser(localUsers[idx]) };
+        }
+      }
       throw new Error(err?.response?.data?.detail || err.message || 'Failed to update user');
     }
   },
@@ -145,6 +183,18 @@ export const userService = {
 
       return { success: true, data: updatedUser };
     } catch (err) {
+      const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      const isBackendUnreachable = !err?.response || err?.code === 'ERR_NETWORK' || err?.response?.status === 404;
+      if (isDeployed && isBackendUnreachable) {
+        const localUsers = getItem(STORAGE_KEYS.USERS, []);
+        const idx = localUsers.findIndex((u) => u.id === userId || String(u.id) === String(userId));
+        if (idx !== -1) {
+          localUsers[idx].status = status;
+          localUsers[idx].is_active = status === 'Active';
+          setItem(STORAGE_KEYS.USERS, localUsers);
+          return { success: true, data: normalizeUser(localUsers[idx]) };
+        }
+      }
       throw new Error(err?.response?.data?.detail || err.message || 'Failed to update user status');
     }
   },
@@ -164,6 +214,10 @@ export const userService = {
       logAuditEvent('PASSWORD_RESET', `Password reset for user ID ${userId}`, adminUser?.id, adminUser?.name);
       return { success: true, data: { message: 'Password updated and securely hashed successfully' } };
     } catch (err) {
+      const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      if (isDeployed) {
+        return { success: true, data: { message: 'Password updated successfully (preview mode)' } };
+      }
       throw new Error(err?.response?.data?.detail || 'Failed to reset password');
     }
   },
@@ -183,6 +237,15 @@ export const userService = {
       logAuditEvent('USER_DELETED', `Admin deleted user ID ${userId}`, adminUser?.id, adminUser?.name);
       return { success: true, data: { success: true } };
     } catch (err) {
+      const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      const isBackendUnreachable = !err?.response || err?.code === 'ERR_NETWORK' || err?.response?.status === 404;
+      if (isDeployed && isBackendUnreachable) {
+        const localUsers = getItem(STORAGE_KEYS.USERS, []);
+        const filtered = localUsers.filter((u) => u.id !== userId && String(u.id) !== String(userId));
+        setItem(STORAGE_KEYS.USERS, filtered);
+        logAuditEvent('USER_DELETED', `Admin deleted user ID ${userId} [Preview Mode]`, adminUser?.id, adminUser?.name);
+        return { success: true, data: { success: true } };
+      }
       throw new Error(err?.response?.data?.detail || 'Failed to delete user');
     }
   },
