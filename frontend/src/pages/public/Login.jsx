@@ -3,12 +3,14 @@ import { useNavigate, Link, useParams, useSearchParams } from 'react-router-dom'
 import {
   Activity, Lock, Mail, AlertCircle, ShieldAlert,
   ArrowRight, UserPlus, Sun, Moon, Stethoscope,
-  HeartPulse, UserCheck, Pill, Shield, FlaskConical, User
+  HeartPulse, UserCheck, Pill, Shield, FlaskConical, User,
+  Globe, Check, RefreshCw, X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { validateEmail, validatePassword } from '../../utils/validators';
 import { resetSystemStorage } from '../../utils/storage';
+import { getApiBaseUrl, setApiBaseUrl } from '../../services/apiClient';
 
 const ROLE_CONFIG = {
   ADMIN: {
@@ -139,6 +141,38 @@ const Login = () => {
   const currentConfig = ROLE_CONFIG[role] || ROLE_CONFIG.ADMIN;
   const RoleIcon = currentConfig.icon;
 
+
+  const [showApiModal, setShowApiModal] = useState(false);
+  const [apiUrlInput, setApiUrlInput] = useState(getApiBaseUrl());
+  const [apiTestStatus, setApiTestStatus] = useState(null);
+  const [apiTesting, setApiTesting] = useState(false);
+
+  const handleSaveApiUrl = async (e) => {
+    e?.preventDefault();
+    setApiTesting(true);
+    setApiTestStatus(null);
+    try {
+      const normalized = setApiBaseUrl(apiUrlInput);
+      setApiUrlInput(normalized);
+      const testOrigin = normalized.replace(/\/api\/v1\/?$/, '');
+      const resp = await fetch(`${testOrigin}/health`, { method: 'GET' });
+      if (resp.ok) {
+        setApiTestStatus({ success: true, message: 'Connected to live Railway backend successfully!' });
+      } else {
+        setApiTestStatus({ success: false, message: `Server reached but returned HTTP ${resp.status}` });
+      }
+    } catch {
+      setApiTestStatus({ success: false, message: 'Cannot reach backend at this URL. Check if Railway is deployed.' });
+    } finally {
+      setApiTesting(false);
+    }
+  };
+
+  const handleResetApiUrl = () => {
+    setApiBaseUrl('');
+    setApiUrlInput(getApiBaseUrl());
+    setApiTestStatus(null);
+  };
 
   // Emergency reset: clears ALL stored data and re-initializes from scratch.
   // Use this if a migration bug corrupted stored passwords.
@@ -382,19 +416,102 @@ const Login = () => {
             </Link>
           </div>
 
-          {/* Emergency Recovery */}
-          <div className="mt-3 text-center">
+          {/* Emergency Recovery & Backend Config */}
+          <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
+            <button
+              type="button"
+              onClick={() => {
+                setApiUrlInput(getApiBaseUrl());
+                setApiTestStatus(null);
+                setShowApiModal(true);
+              }}
+              className="hover:text-hospital-600 dark:hover:text-hospital-400 transition-colors flex items-center gap-1 underline underline-offset-2"
+            >
+              <Globe className="w-3 h-3" />
+              Configure Backend URL
+            </button>
             <button
               type="button"
               onClick={handleResetStorage}
-              className="text-[10px] text-slate-400 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 transition-colors underline underline-offset-2"
+              className="hover:text-rose-500 dark:hover:text-rose-400 transition-colors underline underline-offset-2"
             >
-              ⚠ Reset system storage (emergency only)
+              ⚠ Reset storage
             </button>
           </div>
 
         </div>
       </div>
+
+      {/* Backend API Configuration Modal */}
+      {showApiModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700 relative">
+            <button
+              onClick={() => setShowApiModal(false)}
+              className="absolute top-5 right-5 p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-hospital-100 dark:bg-hospital-900/40 text-hospital-600 dark:text-hospital-400 rounded-2xl">
+                <Globe className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-800 dark:text-white">Backend API URL</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Connect your deployed Railway FastAPI server</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveApiUrl} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Railway Backend URL
+                </label>
+                <input
+                  type="text"
+                  value={apiUrlInput}
+                  onChange={(e) => setApiUrlInput(e.target.value)}
+                  placeholder="https://medicare-360-production.up.railway.app/api/v1"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-hospital-500 font-mono text-slate-800 dark:text-slate-200"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Example: <code className="text-hospital-600 dark:text-hospital-400">https://your-app.up.railway.app</code>
+                </p>
+              </div>
+
+              {apiTestStatus && (
+                <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                  apiTestStatus.success
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                    : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                }`}>
+                  {apiTestStatus.success ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+                  <span>{apiTestStatus.message}</span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={apiTesting}
+                  className="flex-1 py-2.5 bg-hospital-600 hover:bg-deep-forest text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
+                >
+                  {apiTesting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  Save & Test Connection
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetApiUrl}
+                  className="px-3 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 text-xs font-semibold rounded-xl transition-all"
+                >
+                  Reset
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

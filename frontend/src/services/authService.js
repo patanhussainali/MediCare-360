@@ -119,8 +119,15 @@ export const authService = {
       }
 
       const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-      // If deployed on Netlify without live backend URL, provide preview/demo access
-      if (isDeployed && (!err?.response || err?.code === 'ERR_NETWORK')) {
+      const isNetlifyHtml404 = err?.response?.status === 404 && (
+        !err?.response?.data?.detail ||
+        (typeof err?.response?.data === 'string' && err.response.data.includes('<!DOCTYPE'))
+      );
+      const isBackendUnreachable = !err?.response || err?.code === 'ERR_NETWORK' || isNetlifyHtml404;
+
+      // If deployed on Netlify without live backend URL, provide preview/demo access so user is never locked out
+      if (isDeployed && isBackendUnreachable) {
+        console.warn('Backend API unreachable or not connected (404/Network). Proceeding in Preview Mode.');
         const cleanEmail = email.trim().toLowerCase();
         const roleUpper = (selectedRole || 'ADMIN').toUpperCase();
         const namePart = cleanEmail.split('@')[0];
