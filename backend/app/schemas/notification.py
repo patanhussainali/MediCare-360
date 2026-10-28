@@ -3,10 +3,10 @@ from typing import Optional
 from datetime import datetime
 
 class NotificationBase(BaseModel):
-    user_id: int
+    user_id: Optional[int] = None  # None = global broadcast notification
     title: str
     message: str
-    type: str = "general"
+    type: str = "INFO"
     link: Optional[str] = None
 
 class NotificationCreate(NotificationBase):
