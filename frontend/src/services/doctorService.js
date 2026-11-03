@@ -10,6 +10,8 @@ import { axiosInstance } from './apiClient.js';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/storage.js';
 import { logAuditEvent } from './auditService.js';
 
+const normalizeDepartment = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
 export const doctorService = {
   /**
    * Fetch all doctors from the backend.
@@ -18,23 +20,28 @@ export const doctorService = {
     try {
       const response = await axiosInstance.get('/doctors');
       const docs = response.data || [];
-      const normalized = docs.map(d => ({
-        id: d.id,
-        doctorId: d.doctor_id || `DOC-${d.id}`,
-        userId: d.user_id,
-        name: d.full_name || d.name,
-        email: d.email,
-        phone: d.phone,
-        department: d.department || 'Cardiology',
-        specialization: d.specialization || d.department || 'Cardiology',
-        qualification: d.qualification || 'MD, MBBS',
-        experienceYears: d.experience_years ?? d.experienceYears ?? 5,
-        consultationFee: d.consultation_fee ?? d.consultationFee ?? 120,
-        status: d.status || 'Active',
-        availableDays: d.available_days ? d.available_days.split(',') : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-        availableHours: '09:00 AM - 04:00 PM',
-        createdAt: d.created_at || new Date().toISOString(),
-      }));
+      const normalized = docs.map(d => {
+        const rawStatus = d.status || 'Active';
+        const isAvailableOrActive = ['available', 'active'].includes(String(rawStatus).toLowerCase());
+        const dept = d.department_name || d.department || d.specialization || 'Unassigned';
+        return {
+          id: d.id,
+          doctorId: d.doctor_id || `DOC-${d.id}`,
+          userId: d.user_id,
+          name: d.full_name || d.name,
+          email: d.email,
+          phone: d.phone,
+          department: dept,
+          specialization: d.specialization || dept,
+          qualification: d.qualification || 'MD, MBBS',
+          experienceYears: d.experience_years ?? d.experienceYears ?? 5,
+          consultationFee: d.consultation_fee ?? d.consultationFee ?? 120,
+          status: isAvailableOrActive ? 'Active' : rawStatus,
+          availableDays: d.available_days ? d.available_days.split(',') : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+          availableHours: '09:00 AM - 04:00 PM',
+          createdAt: d.created_at || new Date().toISOString(),
+        };
+      });
 
       // Cache locally for instant UI rendering across dashboards
       setItem(STORAGE_KEYS.DOCTORS, normalized);
@@ -53,13 +60,18 @@ export const doctorService = {
     try {
       const response = await axiosInstance.get(`/doctors/${id}`);
       const d = response.data;
+      const rawStatus = d.status || 'Active';
+      const isAvailableOrActive = ['available', 'active'].includes(String(rawStatus).toLowerCase());
+      const dept = d.department_name || d.department || 'General Medicine';
       return {
         success: true,
         data: {
           ...d,
           name: d.full_name || d.name,
-          department: d.department || 'General Medicine',
+          department: dept,
+          specialization: d.specialization || dept,
           consultationFee: d.consultation_fee ?? d.consultationFee ?? 120,
+          status: isAvailableOrActive ? 'Active' : rawStatus,
         }
       };
     } catch (err) {
@@ -86,7 +98,8 @@ export const doctorService = {
       email: cleanEmail,
       password: rawPassword,
       phone: doctorData.phone || '0000000000',
-      department: doctorData.department || 'Cardiology',
+      department: doctorData.department,
+      department_id: getItem(STORAGE_KEYS.DEPARTMENTS, []).find(d => normalizeDepartment(d.name) === normalizeDepartment(doctorData.department))?.id || null,
       specialization: doctorData.specialization || doctorData.department || 'Cardiology',
       qualification: doctorData.qualification || 'MD, MBBS',
       experience_years: Number(doctorData.experienceYears) || 5,
@@ -105,7 +118,7 @@ export const doctorService = {
         name: created.full_name || docName,
         email: cleanEmail,
         phone: payload.phone,
-        department: doctorData.department || 'Cardiology',
+      department: created.department_name || doctorData.department,
         specialization: payload.specialization,
         qualification: payload.qualification,
         experienceYears: payload.experience_years,

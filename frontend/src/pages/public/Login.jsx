@@ -63,7 +63,7 @@ const ROLE_CONFIG = {
     badge: 'Lab Access',
     icon: FlaskConical,
     placeholder: 'Enter lab technician email',
-    targetDashboard: '/admin/reports',
+    targetDashboard: '/lab-tech/dashboard',
   },
   PATIENT: {
     id: 'PATIENT',

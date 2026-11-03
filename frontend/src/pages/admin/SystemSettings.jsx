@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PhoneInput from '../../components/common/PhoneInput';
 import { Settings, Save, RefreshCw, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { setItem, STORAGE_KEYS } from '../../utils/storage';
@@ -75,10 +76,9 @@ const SystemSettings = () => {
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
-              <input
-                type="text"
+              <PhoneInput
                 value={form.phone}
-                onChange={e => setForm({ ...form, phone: e.target.value })}
+                onChange={phone => setForm({ ...form, phone })}
                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border rounded-xl"
               />
             </div>

@@ -1,1 +1,1 @@
-web: uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port ${PORT:-8000}
+web: java -jar java-backend/target/medicare360-1.0.0.jar --server.port=${PORT:-8000}

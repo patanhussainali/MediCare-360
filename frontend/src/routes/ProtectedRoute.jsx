@@ -9,7 +9,7 @@ const roleDashboardMap = {
   RECEPTIONIST: '/receptionist/dashboard',
   PHARMACIST: '/pharmacist/dashboard',
   PATIENT: '/patient/dashboard',
-  LAB_TECHNICIAN: '/admin/reports',
+  LAB_TECHNICIAN: '/lab-tech/dashboard',
 };
 
 const ProtectedRoute = ({ children, allowedRoles }) => {

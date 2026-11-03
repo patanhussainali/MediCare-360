@@ -22,29 +22,25 @@ const AppointmentManagement = () => {
 
   const handleBook = async (e) => {
     e.preventDefault();
-    if (!patientId || !doctorId || !appointmentDate) return alert('Fill required fields');
+    if (!patientId || !doctorId || !appointmentDate) return alert('Fill all required fields');
 
     setLoading(true);
     try {
-      const pat = patients.find(p => p.id === patientId);
-      const doc = doctors.find(d => d.id === doctorId);
-
       await appointmentService.bookAppointment({
-        patientId: pat.id,
-        patientName: pat.name,
-        patientPhone: pat.phone,
-        doctorId: doc.id,
-        doctorName: doc.name,
-        department: doc.department,
+        patientId: Number(patientId),   // numeric DB pk
+        doctorId:  Number(doctorId),    // numeric DB pk
         appointmentDate,
         timeSlot,
         appointmentType: 'Walk-in Intake',
         reason,
       }, currentUser);
 
-      refreshData();
-      alert('Walk-in appointment booked successfully.');
+      await refreshData();
       setIsOpen(false);
+      setPatientId('');
+      setDoctorId('');
+      setAppointmentDate('');
+      setReason('');
     } catch (err) {
       alert(err.message || 'Error booking appointment');
     } finally {
@@ -97,7 +93,7 @@ const AppointmentManagement = () => {
             >
               <option value="">-- Choose Patient --</option>
               {patients.map(p => (
-                <option key={p.id} value={p.id}>{p.name} ({p.id})</option>
+                <option key={p.id} value={p.id}>{p.name} ({p.patientId || p.id})</option>
               ))}
             </select>
           </div>

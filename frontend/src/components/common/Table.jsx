@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
 import EmptyState from './EmptyState';
+import RefreshButton from './RefreshButton';
 
 const Table = ({
   columns,
@@ -46,9 +47,12 @@ const Table = ({
               className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition-all"
             />
           </div>
-          <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">
-            {filteredData.length} {filteredData.length === 1 ? 'record' : 'records'}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">
+              {filteredData.length} {filteredData.length === 1 ? 'record' : 'records'}
+            </span>
+            <RefreshButton />
+          </div>
         </div>
       )}
 

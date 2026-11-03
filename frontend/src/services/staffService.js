@@ -9,6 +9,27 @@ import { axiosInstance } from './apiClient.js';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/storage.js';
 import { logAuditEvent } from './auditService.js';
 
+const normalizeStaffItem = (item, role, prefix) => {
+  if (!item) return null;
+  const staffId = item.nurse_id || item.receptionist_id || item.pharmacist_id || item.staffId || `${prefix}-${item.id}`;
+  const name = item.full_name || item.name || 'Staff Member';
+  return {
+    ...item,
+    id: item.id,
+    staffId: staffId,
+    name: name,
+    full_name: name,
+    email: item.email || '',
+    phone: item.phone || '',
+    role: role,
+    staffRole: role,
+    shift: item.shift || 'General Shift',
+    status: item.status || 'Active',
+    department: item.department_name || item.department || '',
+    licenseNumber: item.license_number || item.licenseNumber || '',
+  };
+};
+
 export const staffService = {
   async getAllStaff() {
     try {
@@ -18,9 +39,13 @@ export const staffService = {
         axiosInstance.get('/staff/pharmacists'),
       ]);
 
-      const nurses = nursesRes.status === 'fulfilled' ? nursesRes.value.data : getItem(STORAGE_KEYS.NURSES, []);
-      const receptionists = recRes.status === 'fulfilled' ? recRes.value.data : getItem(STORAGE_KEYS.RECEPTIONISTS, []);
-      const pharmacists = pharmRes.status === 'fulfilled' ? pharmRes.value.data : getItem(STORAGE_KEYS.PHARMACISTS, []);
+      const rawNurses = nursesRes.status === 'fulfilled' && Array.isArray(nursesRes.value.data) ? nursesRes.value.data : getItem(STORAGE_KEYS.NURSES, []);
+      const rawReceptionists = recRes.status === 'fulfilled' && Array.isArray(recRes.value.data) ? recRes.value.data : getItem(STORAGE_KEYS.RECEPTIONISTS, []);
+      const rawPharmacists = pharmRes.status === 'fulfilled' && Array.isArray(pharmRes.value.data) ? pharmRes.value.data : getItem(STORAGE_KEYS.PHARMACISTS, []);
+
+      const nurses = rawNurses.map(n => normalizeStaffItem(n, 'NURSE', 'NUR')).filter(Boolean);
+      const receptionists = rawReceptionists.map(r => normalizeStaffItem(r, 'RECEPTIONIST', 'REC')).filter(Boolean);
+      const pharmacists = rawPharmacists.map(p => normalizeStaffItem(p, 'PHARMACIST', 'PHAR')).filter(Boolean);
 
       setItem(STORAGE_KEYS.NURSES, nurses);
       setItem(STORAGE_KEYS.RECEPTIONISTS, receptionists);
@@ -28,9 +53,9 @@ export const staffService = {
 
       return { success: true, data: { nurses, receptionists, pharmacists } };
     } catch (err) {
-      const nurses = getItem(STORAGE_KEYS.NURSES, []);
-      const receptionists = getItem(STORAGE_KEYS.RECEPTIONISTS, []);
-      const pharmacists = getItem(STORAGE_KEYS.PHARMACISTS, []);
+      const nurses = (getItem(STORAGE_KEYS.NURSES, [])).map(n => normalizeStaffItem(n, 'NURSE', 'NUR')).filter(Boolean);
+      const receptionists = (getItem(STORAGE_KEYS.RECEPTIONISTS, [])).map(r => normalizeStaffItem(r, 'RECEPTIONIST', 'REC')).filter(Boolean);
+      const pharmacists = (getItem(STORAGE_KEYS.PHARMACISTS, [])).map(p => normalizeStaffItem(p, 'PHARMACIST', 'PHAR')).filter(Boolean);
       return { success: true, data: { nurses, receptionists, pharmacists } };
     }
   },

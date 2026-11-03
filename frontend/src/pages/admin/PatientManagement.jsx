@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import PhoneInput from '../../components/common/PhoneInput';
 import { HeartPulse, Plus, Trash2, Edit } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
@@ -24,6 +25,10 @@ const PatientManagement = () => {
   });
 
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    refreshData();
+  }, []);
 
   const handleCreatePatient = async (e) => {
     e.preventDefault();
@@ -113,11 +118,10 @@ const PatientManagement = () => {
             </div>
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Phone</label>
-              <input
-                type="text"
+              <PhoneInput
                 required
                 value={form.phone}
-                onChange={e => setForm({ ...form, phone: e.target.value })}
+                onChange={phone => setForm({ ...form, phone })}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border rounded-xl"
               />
             </div>

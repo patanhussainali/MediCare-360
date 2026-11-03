@@ -4,10 +4,12 @@ import { Calendar, Clock, Stethoscope, CheckCircle2, AlertCircle } from 'lucide-
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { appointmentService } from '../../services/appointmentService';
+import { DEFAULT_DEPARTMENTS } from '../../utils/storage';
+import { formatCurrency } from '../../utils/formatters';
 
 const BookAppointment = () => {
   const { currentUser } = useAuth();
-  const { doctors, departments, refreshData } = useData();
+  const { patients, doctors, departments, refreshData } = useData();
   const navigate = useNavigate();
 
   const [selectedDepartment, setSelectedDepartment] = useState('');
@@ -21,7 +23,14 @@ const BookAppointment = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const filteredDoctors = doctors.filter(d => d.status === 'Active' && (!selectedDepartment || d.department === selectedDepartment));
+  const filteredDoctors = doctors.filter(d => {
+    const isDocActive = !d.status || ['active', 'available'].includes(String(d.status).toLowerCase());
+    const normalizeDepartment = value => String(value?.name || value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const matchesDept = !selectedDepartment || [d.department, d.specialization].some(value =>
+      normalizeDepartment(value) === normalizeDepartment(selectedDepartment)
+    );
+    return isDocActive && matchesDept;
+  });
 
   const availableSlots = [
     '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
@@ -48,9 +57,20 @@ const BookAppointment = () => {
 
     setLoading(true);
     try {
-      const selectedDoc = doctors.find(d => d.id === selectedDoctorId);
+      const selectedDoc = doctors.find(d => String(d.id) === String(selectedDoctorId));
+      const patient = patients.find(p =>
+        String(p.userId) === String(currentUser?.id) ||
+        String(p.id) === String(currentUser?.profileId) ||
+        p.patientId === currentUser?.profileId
+      );
+
+      if (!patient?.id) {
+        setError('Your patient record could not be found. Please contact the hospital to link your patient profile.');
+        return;
+      }
 
       const res = await appointmentService.bookAppointment({
+        patientId: patient.id,
         doctorId: selectedDoc.id,
         doctorName: selectedDoc.name,
         department: selectedDoc.department,
@@ -60,7 +80,7 @@ const BookAppointment = () => {
         reason,
       }, currentUser);
 
-      if (res.success) {
+      if (res) {
         setSuccess(true);
         refreshData();
       } else {
@@ -120,8 +140,8 @@ const BookAppointment = () => {
                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:border-hospital-500"
                 >
                   <option value="">All Clinical Departments</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.name}>{d.name}</option>
+                  {(departments && departments.length > 0 ? departments : DEFAULT_DEPARTMENTS).map((d) => (
+                    <option key={d.id || d.name} value={d.name}>{d.name}</option>
                   ))}
                 </select>
               </div>
@@ -137,7 +157,7 @@ const BookAppointment = () => {
                 >
                   <option value="">-- Choose Doctor --</option>
                   {filteredDoctors.map((d) => (
-                    <option key={d.id} value={d.id}>{d.name} ({d.specialization}) - Fee: ${d.consultationFee}</option>
+                    <option key={d.id} value={d.id}>{d.name} ({d.specialization}) - Fee: {formatCurrency(d.consultationFee)}</option>
                   ))}
                 </select>
                 {filteredDoctors.length === 0 && (

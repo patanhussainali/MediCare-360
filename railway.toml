@@ -1,9 +1,9 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "pip install -r requirements.txt"
+buildCommand = "cd java-backend && mvn clean package -DskipTests"
 
 [deploy]
-startCommand = "uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT"
+startCommand = "java -jar java-backend/target/medicare360-1.0.0.jar --server.port=$PORT"
 healthcheckPath = "/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"

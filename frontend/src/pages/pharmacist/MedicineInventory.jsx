@@ -34,10 +34,9 @@ const MedicineInventory = () => {
     setLoading(true);
     try {
       await pharmacyService.addMedicine(form, currentUser);
-      refreshData();
-      alert('Medicine added to inventory.');
+      await refreshData();
       setIsOpen(false);
-      setForm({ name: '', category: 'General', dosageForm: 'Tablet', dosage: '500mg', unitPrice: 15.00, stockQuantity: 100, minThreshold: 15, manufacturer: 'Pharma Care' });
+      setForm({ name: '', category: 'Analgesic / Antibiotic', dosageForm: 'Tablet', dosage: '500mg', unitPrice: 15.00, stockQuantity: 100, minThreshold: 15, manufacturer: 'Pharma Care Ltd' });
     } catch (err) {
       alert(err.message || 'Failed to add medicine');
     } finally {
@@ -47,15 +46,23 @@ const MedicineInventory = () => {
 
   const handleUpdateQty = async (id) => {
     if (!stockEditQty) return;
-    await pharmacyService.updateMedicineStock(id, stockEditQty, currentUser);
-    refreshData();
-    setEditingId(null);
+    try {
+      await pharmacyService.updateMedicineStock(id, stockEditQty, currentUser);
+      await refreshData();
+      setEditingId(null);
+    } catch (err) {
+      alert(err.message || 'Failed to update stock');
+    }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Delete medicine item from inventory?')) {
-      await pharmacyService.deleteMedicine(id, currentUser);
-      refreshData();
+    if (window.confirm('Remove medicine from inventory?')) {
+      try {
+        await pharmacyService.deleteMedicine(id, currentUser);
+        await refreshData();
+      } catch (err) {
+        alert(err.message || 'Failed to delete medicine');
+      }
     }
   };
 
@@ -163,7 +170,7 @@ const MedicineInventory = () => {
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Unit Price ($)</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Unit Price (INR)</label>
               <input
                 type="number"
                 step="0.01"

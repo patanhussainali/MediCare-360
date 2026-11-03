@@ -14,8 +14,9 @@ export const patientService = {
       const response = await axiosInstance.get('/patients');
       const pats = response.data || [];
       const normalized = pats.map(p => ({
-        id: p.patient_id || `PAT-${p.id}`,
-        dbId: p.id,
+        id: p.id,                              // numeric DB primary key — used for API calls
+        dbId: p.id,                            // alias kept for backward compat
+        patientId: p.patient_id || `PAT-${p.id}`,  // MRN string — display only
         userId: p.user_id,
         name: p.full_name || p.name,
         email: p.email,
@@ -74,8 +75,9 @@ export const patientService = {
       const created = response.data;
 
       const newPatient = {
-        id: created.patient_id || `PAT-${created.id}`,
+        id: created.id,                               // numeric PK
         dbId: created.id,
+        patientId: created.patient_id || `PAT-${created.id}`,  // MRN display
         userId: created.user_id,
         name: created.full_name || patientData.name,
         email: cleanEmail,

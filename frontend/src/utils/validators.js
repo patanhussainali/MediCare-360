@@ -12,10 +12,12 @@ export const validatePassword = (password) => {
 };
 
 export const validatePhone = (phone) => {
-  if (!phone) return 'Phone number is required';
-  if (phone.trim().length < 7) return 'Please enter a valid phone number';
+  if (!phone) return 'Mobile number is required';
+  if (!/^\d{10}$/.test(String(phone).trim())) return 'Enter exactly 10 digits using numbers only';
   return null;
 };
+
+export const sanitizePhoneInput = (value) => String(value || '').replace(/\D/g, '').slice(0, 10);
 
 export const validateRequired = (value, fieldName = 'Field') => {
   if (!value || (typeof value === 'string' && !value.trim())) {

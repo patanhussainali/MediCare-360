@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Stethoscope, Plus, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
@@ -7,6 +7,9 @@ import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
 import { doctorService } from '../../services/doctorService';
 import { formatCurrency } from '../../utils/formatters';
+import { DEFAULT_DEPARTMENTS } from '../../utils/storage';
+import { getAssignmentsForRole } from '../../utils/roleAssignments';
+import PhoneInput from '../../components/common/PhoneInput';
 
 const DoctorManagement = () => {
   const { currentUser } = useAuth();
@@ -18,8 +21,8 @@ const DoctorManagement = () => {
     email: '',
     password: '',
     phone: '',
-    department: 'Cardiology',
-    specialization: 'Cardiology',
+    department: '',
+    specialization: '',
     qualification: 'MD, MBBS',
     experienceYears: 5,
     consultationFee: 120,
@@ -29,6 +32,10 @@ const DoctorManagement = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    refreshData();
+  }, []);
 
   const handleCreateDoctor = async (e) => {
     e.preventDefault();
@@ -40,7 +47,7 @@ const DoctorManagement = () => {
       refreshData();
       alert(`Doctor account for ${form.name} created successfully. Login Email: ${form.email}`);
       setIsOpen(false);
-      setForm({ name: '', email: '', password: '', phone: '', department: 'Cardiology', specialization: 'Cardiology', qualification: 'MD, MBBS', experienceYears: 5, consultationFee: 120, roomNumber: 'Room 201', availableHours: '09:00 AM - 04:00 PM' });
+      setForm({ name: '', email: '', password: '', phone: '', department: '', specialization: '', qualification: 'MD, MBBS', experienceYears: 5, consultationFee: 120, roomNumber: 'Room 201', availableHours: '09:00 AM - 04:00 PM' });
     } catch (err) {
       setError(err.message || 'Error creating doctor');
     } finally {
@@ -97,8 +104,32 @@ const DoctorManagement = () => {
         onEmptyAction={() => setIsOpen(true)}
       />
 
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Register New Specialist Doctor" maxWidth="max-w-2xl">
-        <form onSubmit={handleCreateDoctor} className="space-y-4 text-xs">
+      <Modal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        title="Register New Specialist Doctor"
+        maxWidth="max-w-2xl"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold text-xs transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="createDoctorForm"
+              disabled={loading}
+              className="px-5 py-2 bg-hospital-600 hover:bg-hospital-700 active:bg-hospital-800 text-white font-bold text-xs rounded-xl shadow-soft transition disabled:opacity-50"
+            >
+              {loading ? 'Creating Doctor Account...' : 'Create Doctor Account'}
+            </button>
+          </>
+        }
+      >
+        <form id="createDoctorForm" onSubmit={handleCreateDoctor} className="space-y-4 text-xs">
           {error && (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -106,7 +137,7 @@ const DoctorManagement = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Doctor Full Name</label>
               <input
@@ -115,7 +146,7 @@ const DoctorManagement = () => {
                 placeholder="Dr. Alexander Wright"
                 value={form.name}
                 onChange={e => setForm({ ...form, name: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border rounded-xl"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
               />
             </div>
 
@@ -127,7 +158,7 @@ const DoctorManagement = () => {
                 placeholder="alexander@medicare360.com"
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border rounded-xl"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
               />
             </div>
 
@@ -138,18 +169,17 @@ const DoctorManagement = () => {
                 required
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border rounded-xl"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
               />
             </div>
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Phone</label>
-              <input
-                type="text"
+              <PhoneInput
                 required
                 value={form.phone}
-                onChange={e => setForm({ ...form, phone: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border rounded-xl"
+                onChange={phone => setForm({ ...form, phone })}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
               />
             </div>
 
@@ -157,34 +187,28 @@ const DoctorManagement = () => {
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Clinical Department</label>
               <select
                 value={form.department}
+                required
                 onChange={e => setForm({ ...form, department: e.target.value, specialization: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border rounded-xl"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
               >
-                {departments.map(d => (
-                  <option key={d.id} value={d.name}>{d.name}</option>
+                <option value="">Select Department...</option>
+                {getAssignmentsForRole('DOCTOR').map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Consultation Fee ($)</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Consultation Fee (INR)</label>
               <input
                 type="number"
                 required
                 value={form.consultationFee}
                 onChange={e => setForm({ ...form, consultationFee: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border rounded-xl"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
               />
             </div>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-hospital-600 text-white font-bold text-sm rounded-xl shadow-soft"
-          >
-            {loading ? 'Creating Doctor Account...' : 'Create Doctor Account'}
-          </button>
         </form>
       </Modal>
     </div>

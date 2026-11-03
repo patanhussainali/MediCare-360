@@ -1,10 +1,27 @@
 import { getItem, setItem, STORAGE_KEYS } from '../utils/storage';
-import { mockApiCall } from './apiClient';
+import { mockApiCall, axiosInstance } from './apiClient';
 import { logAuditEvent } from './auditService';
 
 export const departmentService = {
   async getAllDepartments() {
-    return mockApiCall(() => getItem(STORAGE_KEYS.DEPARTMENTS, []));
+    try {
+      const response = await axiosInstance.get('/departments');
+      const deps = response.data || [];
+      const normalized = deps.map(d => ({
+        id: d.id,
+        name: d.name,
+        code: d.code,
+        description: d.description || '',
+        headOfDepartment: d.head_of_department || 'To Be Assigned',
+        status: d.status || (d.is_active || d.active ? 'Active' : 'Inactive'),
+        createdAt: d.created_at || new Date().toISOString(),
+      }));
+      setItem(STORAGE_KEYS.DEPARTMENTS, normalized);
+      return { success: true, data: normalized };
+    } catch (err) {
+      const local = getItem(STORAGE_KEYS.DEPARTMENTS, []);
+      return { success: true, data: local };
+    }
   },
 
   async addDepartment(depData, user) {

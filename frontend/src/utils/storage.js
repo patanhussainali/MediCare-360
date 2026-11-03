@@ -24,14 +24,45 @@ const STORAGE_KEYS = {
   REFRESH_TOKEN: 'medicare360_refresh_token',
 };
 
+export const DEFAULT_DEPARTMENTS = [
+  { id: 1, code: 'CARD', name: 'Cardiology', description: 'Heart and vascular health care', status: 'Active' },
+  { id: 2, code: 'NEUR', name: 'Neurology', description: 'Brain, spinal cord and nervous system care', status: 'Active' },
+  { id: 9, code: 'ENT', name: 'ENT (Ear, Nose & Throat)', description: 'Ear, nose, throat, head and neck surgical care', status: 'Active' },
+  { id: 3, code: 'PEDI', name: 'Pediatrics', description: 'Medical care for infants, children, and adolescents', status: 'Active' },
+  { id: 4, code: 'ORTH', name: 'Orthopedics', description: 'Bones, joints, ligaments, tendons, and muscles care', status: 'Active' },
+  { id: 5, code: 'GENM', name: 'General Medicine', description: 'Primary and comprehensive adult medical care', status: 'Active' },
+  { id: 6, code: 'DERM', name: 'Dermatology', description: 'Skin, hair, and nail health care', status: 'Active' },
+  { id: 7, code: 'EMER', name: 'Emergency', description: '24/7 urgent and emergency trauma care', status: 'Active' },
+  { id: 10, code: 'ONCO', name: 'Oncology', description: 'Cancer screening, chemotherapy and oncological management', status: 'Active' },
+  { id: 11, code: 'OBGYN', name: 'Gynecology & Obstetrics', description: "Women's health, pregnancy, maternity and neonatal care", status: 'Active' },
+  { id: 12, code: 'OPHTH', name: 'Ophthalmology', description: 'Vision care, eye surgeries and ocular diagnostics', status: 'Active' },
+  { id: 13, code: 'PULM', name: 'Pulmonology', description: 'Respiratory medicine, asthma and pulmonary critical care', status: 'Active' },
+  { id: 14, code: 'GASTRO', name: 'Gastroenterology', description: 'Digestive system, liver, and endoscopic diagnostics', status: 'Active' },
+  { id: 15, code: 'NEPH', name: 'Nephrology', description: 'Kidney disease, dialysis, and hypertension management', status: 'Active' },
+  { id: 16, code: 'PSYCH', name: 'Psychiatry', description: 'Behavioral health, psychiatric medicine and counseling', status: 'Active' },
+  { id: 8, code: 'PHAR', name: 'Pharmacy', description: 'Medicinal supply, prescription dispensing and inventory', status: 'Active' },
+];
+
 export const getItem = (key, fallback = []) => {
   try {
     if (!key) return fallback;
     const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : fallback;
+    if (item === null || item === undefined) {
+      return key === STORAGE_KEYS.DEPARTMENTS ? DEFAULT_DEPARTMENTS : fallback;
+    }
+    try {
+      const parsed = JSON.parse(item);
+      if (key === STORAGE_KEYS.DEPARTMENTS && Array.isArray(parsed) && parsed.length === 0) {
+        return DEFAULT_DEPARTMENTS;
+      }
+      return parsed;
+    } catch {
+      // If item is not valid JSON (e.g. raw string / JWT token), return it directly
+      return item;
+    }
   } catch (error) {
     console.error(`Error reading ${key} from localStorage:`, error);
-    return fallback;
+    return key === STORAGE_KEYS.DEPARTMENTS ? DEFAULT_DEPARTMENTS : fallback;
   }
 };
 
@@ -64,6 +95,7 @@ export const initializeStorage = () => {
   const initialized = localStorage.getItem('medicare360_initialized');
   if (!initialized) {
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.DEPARTMENTS, JSON.stringify(DEFAULT_DEPARTMENTS));
     localStorage.setItem(STORAGE_KEYS.AUDIT_LOGS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.SYSTEM_SETTINGS, JSON.stringify({
       hospitalName: 'Kalasalingam Hospital',
@@ -73,7 +105,7 @@ export const initializeStorage = () => {
       email: 'hussainalipatan@gmail.com',
       emergencyContact: '9182281940',
       operatingHours: '24/7 Emergency & Inpatient | Outpatient: 8:00 AM - 8:00 PM',
-      currency: 'USD ($)',
+      currency: 'INR (₹)',
       taxRate: 5,
     }));
     localStorage.setItem('medicare360_initialized', 'true');

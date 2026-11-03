@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CreditCard, CheckCircle2, ShieldCheck, DollarSign } from 'lucide-react';
+import { CreditCard, CheckCircle2, ShieldCheck, Eye } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import Table from '../../components/common/Table';
@@ -7,15 +7,28 @@ import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { billingService } from '../../services/billingService';
+import BillInvoice from '../../components/common/BillInvoice';
 
 const Bills = () => {
   const { currentUser } = useAuth();
-  const { bills, refreshData } = useData();
+  const { bills, patients, refreshData } = useData();
   const [payingBill, setPayingBill] = useState(null);
+  const [viewBill, setViewBill] = useState(null);
   const [cardDetails, setCardDetails] = useState({ number: '4532 •••• •••• 8821', expiry: '12/28', cvv: '882' });
   const [processing, setProcessing] = useState(false);
 
-  const myBills = bills.filter(b => b.patientUserId === currentUser?.id || b.patientId === currentUser?.profileId);
+  const myPatient = patients.find(p => String(p.userId) === String(currentUser?.id) || String(p.patientId) === String(currentUser?.profileId) || String(p.id) === String(currentUser?.profileId));
+  const myBills = bills.filter(b => String(b.patientId) === String(myPatient?.id) || String(b.patientUserId) === String(currentUser?.id));
+  const classifyBill = bill => {
+    const text = `${bill.description || ''} ${(bill.items || []).map(item => item.description || item.medicine_name || '').join(' ')}`.toLowerCase();
+    if (text.includes('medicine') || text.includes('pharmacy') || text.includes('dispense')) return 'Medicines';
+    if (text.includes('lab') || text.includes('test') || text.includes('x-ray') || text.includes('xray')) return 'Lab Tests';
+    return 'Appointments';
+  };
+  const groupedBills = ['Appointments', 'Medicines', 'Lab Tests'].map(category => ({
+    category,
+    bills: myBills.filter(bill => classifyBill(bill) === category),
+  }));
 
   const handlePay = async (e) => {
     e.preventDefault();
@@ -36,24 +49,16 @@ const Bills = () => {
 
   const columns = [
     { header: 'Invoice ID', accessor: 'id' },
-    { header: 'Created Date', render: (r) => formatDate(r.createdDate) },
-    { header: 'Due Date', render: (r) => formatDate(r.dueDate) },
+    { header: 'Created Date', render: (r) => formatDate(r.createdAt || r.createdDate) },
+    { header: 'Category', render: (r) => classifyBill(r) },
     { header: 'Amount', render: (r) => <span className="font-bold">{formatCurrency(r.totalAmount)}</span> },
     { header: 'Status', render: (r) => <Badge status={r.status} /> },
     {
       header: 'Actions',
-      render: (r) => r.status === 'Pending' || r.status === 'Unpaid' ? (
-        <button
-          onClick={() => setPayingBill(r)}
-          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-soft transition-all"
-        >
-          Pay Online
-        </button>
-      ) : (
-        <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
-          <CheckCircle2 className="w-3.5 h-3.5" /> Paid
-        </span>
-      )
+      render: (r) => <div className="flex items-center gap-2">
+        <button onClick={() => setViewBill(r)} className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold"><Eye className="mr-1 inline h-3.5 w-3.5" />Invoice</button>
+        {['Pending', 'Unpaid'].includes(r.paymentStatus || r.status) ? <button onClick={() => setPayingBill(r)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-soft transition-all">Pay Online</button> : <span className="text-xs text-emerald-600 font-bold flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Paid</span>}
+      </div>
     }
   ];
 
@@ -64,12 +69,12 @@ const Bills = () => {
         <p className="text-xs text-slate-400">View hospital billing invoices and make online payments</p>
       </div>
 
-      <Table
-        columns={columns}
-        data={myBills}
-        emptyTitle="No billing records available."
-        emptyDescription="Billing invoices generated for hospital services will appear here."
-      />
+      {groupedBills.map(group => <section key={group.category} className="space-y-2">
+        <h3 className="font-bold text-slate-700 dark:text-slate-200">{group.category}</h3>
+        <Table columns={columns} data={group.bills} emptyTitle={`No ${group.category.toLowerCase()} bills.`} emptyDescription="New invoices will appear here when issued." />
+      </section>)}
+
+      {viewBill && <Modal isOpen onClose={() => setViewBill(null)} title={`Invoice ${viewBill.invoiceNumber || `#${viewBill.id}`}`} maxWidth="max-w-2xl"><BillInvoice bill={viewBill} /></Modal>}
 
       {/* Payment Gateway Modal Simulator */}
       {payingBill && (

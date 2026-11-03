@@ -1,0 +1,197 @@
+package com.medicare360.service;
+
+import com.medicare360.dto.*;
+import com.medicare360.entity.*;
+import com.medicare360.exception.ResourceNotFoundException;
+import com.medicare360.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@Service
+public class PrescriptionService {
+
+    private final PrescriptionRepository prescriptionRepository;
+    private final PrescriptionItemRepository prescriptionItemRepository;
+    private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final AuditService auditService;
+
+    public PrescriptionService(
+            PrescriptionRepository prescriptionRepository,
+            PrescriptionItemRepository prescriptionItemRepository,
+            PatientRepository patientRepository,
+            DoctorRepository doctorRepository,
+            AppointmentRepository appointmentRepository,
+            AuditService auditService
+    ) {
+        this.prescriptionRepository = prescriptionRepository;
+        this.prescriptionItemRepository = prescriptionItemRepository;
+        this.patientRepository = patientRepository;
+        this.doctorRepository = doctorRepository;
+        this.appointmentRepository = appointmentRepository;
+        this.auditService = auditService;
+    }
+
+    @Transactional(readOnly = true)
+    public List<PrescriptionResponse> getMulti(int skip, int limit, Long patientId, Long doctorId) {
+        int page = limit > 0 ? skip / limit : 0;
+        int size = limit > 0 ? limit : 50;
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<Prescription> prescriptions = prescriptionRepository.findAll(pageable);
+        return prescriptions.getContent().stream()
+                .filter(p -> patientId == null || (p.getPatient() != null && p.getPatient().getId().equals(patientId)))
+                .filter(p -> doctorId == null || (p.getDoctor() != null && p.getDoctor().getId().equals(doctorId)))
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PrescriptionResponse getById(Long id) {
+        Prescription p = prescriptionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Prescription not found"));
+        return toResponse(p);
+    }
+
+    @Transactional
+    public PrescriptionResponse create(PrescriptionCreateRequest req, User currentUser, String ipAddress, String userAgent) {
+        Patient patient = patientRepository.findById(req.getPatientId())
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
+
+        Doctor doctor = doctorRepository.findById(req.getDoctorId())
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+
+        Appointment apt = null;
+        if (req.getAppointmentId() != null) {
+            apt = appointmentRepository.findById(req.getAppointmentId()).orElse(null);
+        }
+
+        Prescription p = new Prescription();
+        p.setPrescriptionNumber("PRESC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase());
+        p.setPatient(patient);
+        p.setDoctor(doctor);
+        p.setAppointment(apt);
+        p.setDiagnosis(req.getDiagnosis());
+        p.setInstructions(req.getInstructions());
+        p.setStatus("Active");
+
+        p = prescriptionRepository.save(p);
+
+        List<PrescriptionItem> items = new ArrayList<>();
+        if (req.getItems() != null) {
+            for (PrescriptionItemCreateRequest itemReq : req.getItems()) {
+                PrescriptionItem item = new PrescriptionItem();
+                item.setPrescription(p);
+                item.setMedicineName(itemReq.getMedicineName());
+                item.setDosage(itemReq.getDosage());
+                item.setFrequency(itemReq.getFrequency());
+                item.setDuration(itemReq.getDuration());
+                item.setInstructions(itemReq.getInstructions());
+                items.add(prescriptionItemRepository.save(item));
+            }
+        }
+        p.setItems(items);
+
+        auditService.logAction(
+                "PRESCRIPTION_CREATED",
+                "Prescription",
+                currentUser,
+                p.getId().toString(),
+                Map.of("patient_id", patient.getId(), "items_count", items.size()),
+                ipAddress,
+                userAgent
+        );
+
+        return toResponse(p);
+    }
+
+    @Transactional
+    public PrescriptionResponse update(Long id, PrescriptionUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
+        Prescription p = prescriptionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Prescription not found"));
+
+        if (req.getDiagnosis() != null) p.setDiagnosis(req.getDiagnosis());
+        if (req.getInstructions() != null) p.setInstructions(req.getInstructions());
+        if (req.getStatus() != null) p.setStatus(req.getStatus());
+
+        p = prescriptionRepository.save(p);
+
+        auditService.logAction(
+                "PRESCRIPTION_UPDATED",
+                "Prescription",
+                currentUser,
+                p.getId().toString(),
+                Map.of("id", p.getId()),
+                ipAddress,
+                userAgent
+        );
+
+        return toResponse(p);
+    }
+
+    @Transactional
+    public PrescriptionItemResponse addItem(Long prescriptionId, PrescriptionItemCreateRequest itemReq, User currentUser) {
+        Prescription p = prescriptionRepository.findById(prescriptionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prescription not found"));
+
+        PrescriptionItem item = new PrescriptionItem();
+        item.setPrescription(p);
+        item.setMedicineName(itemReq.getMedicineName());
+        item.setDosage(itemReq.getDosage());
+        item.setFrequency(itemReq.getFrequency());
+        item.setDuration(itemReq.getDuration());
+        item.setInstructions(itemReq.getInstructions());
+
+        item = prescriptionItemRepository.save(item);
+        return toItemResponse(item);
+    }
+
+    public PrescriptionResponse toResponse(Prescription p) {
+        PrescriptionResponse res = new PrescriptionResponse();
+        res.setId(p.getId());
+        res.setPrescriptionNumber(p.getPrescriptionNumber());
+        if (p.getPatient() != null) {
+            res.setPatientId(p.getPatient().getId());
+            res.setPatientName(p.getPatient().getFullName());
+        }
+        if (p.getDoctor() != null) {
+            res.setDoctorId(p.getDoctor().getId());
+            res.setDoctorName(p.getDoctor().getFullName());
+        }
+        if (p.getAppointment() != null) {
+            res.setAppointmentId(p.getAppointment().getId());
+        }
+        res.setDiagnosis(p.getDiagnosis());
+        res.setInstructions(p.getInstructions());
+        res.setStatus(p.getStatus());
+        res.setCreatedAt(p.getCreatedAt());
+        res.setUpdatedAt(p.getUpdatedAt());
+
+        List<PrescriptionItem> items = prescriptionItemRepository.findByPrescription_Id(p.getId());
+        res.setItems(items.stream().map(this::toItemResponse).toList());
+
+        return res;
+    }
+
+    public PrescriptionItemResponse toItemResponse(PrescriptionItem item) {
+        PrescriptionItemResponse res = new PrescriptionItemResponse();
+        res.setId(item.getId());
+        res.setMedicineName(item.getMedicineName());
+        res.setDosage(item.getDosage());
+        res.setFrequency(item.getFrequency());
+        res.setDuration(item.getDuration());
+        res.setInstructions(item.getInstructions());
+        return res;
+    }
+}
+

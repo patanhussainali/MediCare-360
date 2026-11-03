@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import PhoneInput from '../../components/common/PhoneInput';
 import { UserPlus, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
@@ -6,6 +7,7 @@ import Table from '../../components/common/Table';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
 import { staffService } from '../../services/staffService';
+import { getAssignmentsForRole } from '../../utils/roleAssignments';
 
 const StaffManagement = () => {
   const { currentUser } = useAuth();
@@ -18,12 +20,25 @@ const StaffManagement = () => {
     email: '',
     password: 'Staff@123',
     phone: '',
-    department: 'General Healthcare',
+    department: '',
     shift: 'Day Shift (08:00 AM - 04:00 PM)',
   });
 
+  const handleRoleChange = (newRole) => {
+    setRole(newRole);
+    setForm(prev => ({
+      ...prev,
+      department: '',
+      password: `${newRole.charAt(0) + newRole.slice(1).toLowerCase()}@123`
+    }));
+  };
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    refreshData();
+  }, []);
 
   const allStaff = [
     ...nurses.map(n => ({ ...n, staffRole: 'NURSE' })),
@@ -41,7 +56,7 @@ const StaffManagement = () => {
       refreshData();
       alert(`${role} account for ${form.name} created. Email: ${form.email}`);
       setIsOpen(false);
-      setForm({ name: '', email: '', password: 'Staff@123', phone: '', department: 'General Healthcare', shift: 'Day Shift' });
+      setForm({ name: '', email: '', password: 'Staff@123', phone: '', department: '', shift: 'Day Shift' });
     } catch (err) {
       setError(err.message || 'Error creating staff');
     } finally {
@@ -57,8 +72,25 @@ const StaffManagement = () => {
   };
 
   const columns = [
-    { header: 'Staff ID', accessor: 'id' },
-    { header: 'Full Name', accessor: 'name' },
+    {
+      header: 'Staff ID',
+      render: (r) => (
+        <span className="font-mono text-xs text-slate-500">
+          {r.staffId || r.nurse_id || r.receptionist_id || r.pharmacist_id || `STF-${r.id}`}
+        </span>
+      )
+    },
+    {
+      header: 'Full Name',
+      render: (r) => (
+        <div>
+          <span className="font-bold text-slate-800 dark:text-white block">
+            {r.name || r.full_name || 'Staff Member'}
+          </span>
+          {r.phone && <span className="text-[11px] text-slate-400">{r.phone}</span>}
+        </div>
+      )
+    },
     { header: 'Email Login', accessor: 'email' },
     {
       header: 'Staff Role',
@@ -68,7 +100,7 @@ const StaffManagement = () => {
         </span>
       )
     },
-    { header: 'Shift', accessor: 'shift' },
+    { header: 'Shift', render: (r) => <span className="text-xs">{r.shift || 'General Shift'}</span> },
     { header: 'Status', render: (r) => <Badge status={r.status} /> },
     {
       header: 'Actions',
@@ -120,7 +152,7 @@ const StaffManagement = () => {
                 <button
                   key={r}
                   type="button"
-                  onClick={() => setRole(r)}
+                  onClick={() => handleRoleChange(r)}
                   className={`py-2 text-xs font-bold rounded-xl border transition-all ${
                     role === r ? 'bg-hospital-600 text-white border-hospital-600' : 'bg-slate-50 text-slate-700 border-slate-200'
                   }`}
@@ -129,6 +161,23 @@ const StaffManagement = () => {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Assigned Department / Unit <span className="text-hospital-600">*</span>
+            </label>
+            <select
+              required
+              value={form.department}
+              onChange={e => setForm({ ...form, department: e.target.value })}
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border rounded-xl"
+            >
+              <option value="">Select Department / Unit...</option>
+              {getAssignmentsForRole(role).map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -169,11 +218,10 @@ const StaffManagement = () => {
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Phone</label>
-              <input
-                type="text"
+              <PhoneInput
                 required
                 value={form.phone}
-                onChange={e => setForm({ ...form, phone: e.target.value })}
+                onChange={phone => setForm({ ...form, phone })}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border rounded-xl"
               />
             </div>

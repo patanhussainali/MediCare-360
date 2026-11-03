@@ -2,9 +2,9 @@
 
 MediCare-360 is an enterprise-grade, full-stack hospital management web application engineered for modern healthcare institutions. It provides role-tailored portals, real-time patient monitoring, doctor scheduling, electronic health records (EHR), pharmacy inventory control, billing workflows, audit logging, and centralized administrative management.
 
+The backend has been migrated to **Java 21 + Spring Boot 3.2.5** with full JPA/Hibernate data preservation, and the frontend is powered by **React 18 + Vite + Tailwind CSS**.
+
 ---
-
-
 
 ## 👥 Role-Based Portals
 
@@ -19,57 +19,64 @@ MediCare-360 implements strict Role-Based Access Control (RBAC) across 6 dedicat
 
 ---
 
-
-
 ## 🚀 Getting Started
 
-### 1. Backend Setup
+### 1. Java Backend Setup (Spring Boot)
 
-```bash
-cd backend
+**Requirements:** Java 21 JDK, Maven 3.9+
 
-# Create and activate virtual environment
-python -m venv venv
+# From project root
+powershell -ExecutionPolicy Bypass -File run-backend.ps1
 
-# On Windows:
-venv\Scripts\activate
-# On Linux / macOS:
-source venv/bin/activate
+or
 
-# Install dependencies
-pip install -r requirements.txt
+run-backend.bat
 
-# Create .env from template
-cp .env.example .env
+```
 
-# Run database migrations and seeds
-python -m app.database.init_db
+manuall way
+mvn -DskipTests package
+mvn -DskipTests package ; java -jar target\medicare360-1.0.0.jar
+java -jar target\medicare360-1.0.0.jar
 
-# Start backend server (Windows)
-venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-# Or cross-platform with active venv:
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+mvn spring-boot:run
+mvn -DskipTests package
+
 ```
 Backend API will be accessible at: `http://127.0.0.1:8000`  
-Interactive Swagger docs: `http://127.0.0.1:8000/docs`
+Health check endpoint: `http://127.0.0.1:8000/health`
 
 ---
 
-### 2. Frontend Setup
+### 2. Frontend Setup (React + Vite)
 
-```bash
+**Requirements:** Node.js 18+
+
+```powershell
+# Using the PowerShell runner script from root:
+.\run-frontend.ps1
+
+# Or using npm directly:
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
-Frontend will be available at: `http://localhost:5173`
+Frontend will be available at: `http://localhost:3000`
 
 ---
 
+## 🧪 Testing
+
+To run the Java backend test suite:
+```powershell
+cd java-backend
+mvn test
+```
+
+To run the automated API and RBAC test suite against the running backend:
+```powershell
+powershell -ExecutionPolicy Bypass -File test-api-suite.ps1
+```
 
 ---
 

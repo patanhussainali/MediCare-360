@@ -1,115 +1,138 @@
-import { getItem, setItem, STORAGE_KEYS } from '../utils/storage';
-import { mockApiCall } from './apiClient';
-import { logAuditEvent } from './auditService';
-import { notificationService } from './notificationService';
+/**
+ * billingService.js — MediCare360 Billing / Invoice Service
+ * All operations call the Java Spring Boot backend.
+ */
+
+import { axiosInstance } from './apiClient.js';
+import { getItem, setItem, STORAGE_KEYS } from '../utils/storage.js';
+import { logAuditEvent } from './auditService.js';
+
+export const normalizeBill = (b) => {
+  if (!b) return null;
+  const items = (() => {
+    if (Array.isArray(b.items)) return b.items;
+    try { return JSON.parse(b.items_json || '[]'); } catch { return []; }
+  })();
+  return {
+    id: b.id,
+    invoiceNumber: b.invoice_number || b.invoiceNumber || `INV-${b.id}`,
+    patientId: b.patient_id ?? b.patientId,
+    patientName: b.patient_name || b.patientName || 'Unknown Patient',
+    appointmentId: b.appointment_id ?? b.appointmentId ?? null,
+    description: b.description || '',
+    items,
+    subtotal: parseFloat(b.subtotal || 0),
+    tax: parseFloat(b.tax || 0),
+    discount: parseFloat(b.discount || 0),
+    totalAmount: parseFloat(b.total_amount ?? b.totalAmount ?? 0),
+    status: b.payment_status || b.paymentStatus || b.status || 'Pending',
+    paymentStatus: b.payment_status || b.paymentStatus || b.status || 'Pending',
+    paymentMethod: b.payment_method || b.paymentMethod || null,
+    paidAt: b.paid_at || b.paidAt || null,
+    notes: b.notes || '',
+    createdAt: b.created_at || b.createdAt || new Date().toISOString(),
+    updatedAt: b.updated_at || b.updatedAt || null,
+  };
+};
 
 export const billingService = {
-  async getAllBills() {
-    return mockApiCall(() => getItem(STORAGE_KEYS.BILLS, []));
+  async getAllBills(patientId, paymentStatus) {
+    try {
+      const params = new URLSearchParams({ limit: 200 });
+      if (patientId)     params.append('patient_id', patientId);
+      if (paymentStatus) params.append('payment_status', paymentStatus);
+      const response = await axiosInstance.get(`/billing?${params.toString()}`);
+      const normalized = (response.data || []).map(normalizeBill);
+      setItem(STORAGE_KEYS.BILLS, normalized);
+      return { success: true, data: normalized };
+    } catch (err) {
+      return { success: true, data: getItem(STORAGE_KEYS.BILLS, []) };
+    }
   },
 
   async getBillsByPatient(patientId) {
-    return mockApiCall(() => {
-      const bills = getItem(STORAGE_KEYS.BILLS, []);
-      const patients = getItem(STORAGE_KEYS.PATIENTS, []);
-      const patient = patients.find(p => p.id === patientId || p.userId === patientId);
-
-      return bills.filter(b => b.patientId === patientId || (patient && b.patientId === patient.id));
-    });
+    return this.getAllBills(patientId, null);
   },
 
-  async createBill(billData, user) {
-    return mockApiCall(() => {
-      const bills = getItem(STORAGE_KEYS.BILLS, []);
-      const patients = getItem(STORAGE_KEYS.PATIENTS, []);
+  /**
+   * Create a new invoice.
+   * patientId must be a numeric DB PK.
+   */
+  async createBill(billData, currentUser) {
+    const patientId = Number(billData.patientId);
+    if (!patientId || isNaN(patientId)) throw new Error('Please select a valid patient.');
 
-      const patient = patients.find(p => p.id === billData.patientId || p.name === billData.patientName);
-      if (!patient) throw new Error('Patient record not found');
+    const lineItems = billData.items || [
+      { description: billData.description || 'Consultation Fee', amount: parseFloat(billData.amount) || 150 }
+    ];
+    const subtotal    = lineItems.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+    const tax         = parseFloat(billData.tax ?? subtotal * 0.05);
+    const discount    = parseFloat(billData.discount ?? 0);
+    const totalAmount = subtotal + tax - discount;
 
-      const invId = `INV-${Math.floor(100000 + Math.random() * 900000)}`;
+    const payload = {
+      patient_id:     patientId,
+      appointment_id: billData.appointmentId ? Number(billData.appointmentId) : null,
+      description:    billData.description || '',
+      items:          lineItems,
+      subtotal,
+      tax,
+      discount,
+      total_amount:   totalAmount,
+      payment_status: 'Pending',
+      notes:          billData.notes || '',
+    };
 
-      const lineItems = billData.items || [
-        { description: billData.description || 'Consultation & Clinical Care Fee', amount: parseFloat(billData.amount) || 150.00 }
-      ];
+    try {
+      const response = await axiosInstance.post('/billing', payload);
+      const created = normalizeBill(response.data);
 
-      const subtotal = lineItems.reduce((acc, item) => acc + (parseFloat(item.amount) || 0), 0);
-      const tax = subtotal * 0.05; // 5% healthcare tax
-      const totalAmount = subtotal + tax;
+      const cached = getItem(STORAGE_KEYS.BILLS, []);
+      cached.unshift(created);
+      setItem(STORAGE_KEYS.BILLS, cached);
 
-      const newBill = {
-        id: invId,
-        patientId: patient.id,
-        patientUserId: patient.userId,
-        patientName: patient.name,
-        patientEmail: patient.email,
-        patientPhone: patient.phone,
-        items: lineItems,
-        subtotal,
-        tax,
-        totalAmount,
-        status: billData.status || 'Pending', // 'Pending', 'Paid', 'Overdue'
-        paymentMethod: null,
-        dueDate: billData.dueDate || new Date(Date.now() + 14*24*60*60*1000).toISOString().split('T')[0],
-        createdDate: new Date().toISOString(),
-      };
-
-      bills.unshift(newBill);
-      setItem(STORAGE_KEYS.BILLS, bills);
-
-      logAuditEvent('GENERATE_BILL', `Invoice ${invId} ($${totalAmount.toFixed(2)}) created for ${patient.name}`, user?.id, user?.name);
-
-      notificationService.createNotification({
-        userId: patient.userId,
-        title: 'New Billing Invoice Generated',
-        message: `Invoice ${invId} for $${totalAmount.toFixed(2)} is pending payment.`,
-        type: 'BILLING',
-      });
-
-      return newBill;
-    });
+      logAuditEvent('GENERATE_BILL', `Invoice ${created.invoiceNumber} created`, currentUser?.id, currentUser?.name);
+      return created;
+    } catch (err) {
+      throw new Error(err?.response?.data?.detail || err.message || 'Failed to create invoice');
+    }
   },
 
-  async processPayment(billId, paymentDetails, user) {
-    return mockApiCall(() => {
-      const bills = getItem(STORAGE_KEYS.BILLS, []);
-      const payments = getItem(STORAGE_KEYS.PAYMENTS, []);
-
-      const index = bills.findIndex(b => b.id === billId);
-      if (index === -1) throw new Error('Invoice not found');
-
-      const bill = bills[index];
-      bill.status = 'Paid';
-      bill.paidAt = new Date().toISOString();
-      bill.paymentMethod = paymentDetails.paymentMethod || 'Credit Card (Simulated)';
-      bill.transactionId = `TXN-${Date.now()}`;
-
-      const paymentRecord = {
-        id: `PAY-${Date.now()}`,
-        billId: bill.id,
-        patientName: bill.patientName,
-        amount: bill.totalAmount,
-        paymentMethod: bill.paymentMethod,
-        transactionId: bill.transactionId,
-        paidAt: bill.paidAt,
+  /**
+   * Mark invoice as Paid (or other status).
+   */
+  async processPayment(billId, paymentDetails, currentUser) {
+    try {
+      const payload = {
+        payment_status: 'Paid',
+        payment_method: paymentDetails.paymentMethod || 'Cash',
       };
+      const response = await axiosInstance.patch(`/billing/${billId}/status`, payload);
+      const updated = normalizeBill(response.data);
 
-      payments.unshift(paymentRecord);
+      const cached = getItem(STORAGE_KEYS.BILLS, []);
+      const idx = cached.findIndex(b => String(b.id) === String(billId));
+      if (idx !== -1) { cached[idx] = updated; setItem(STORAGE_KEYS.BILLS, cached); }
 
-      setItem(STORAGE_KEYS.BILLS, bills);
-      setItem(STORAGE_KEYS.PAYMENTS, payments);
+      logAuditEvent('PAYMENT_PROCESSED', `Invoice #${billId} marked as Paid`, currentUser?.id, currentUser?.name);
+      return { bill: updated };
+    } catch (err) {
+      throw new Error(err?.response?.data?.detail || err.message || 'Failed to process payment');
+    }
+  },
 
-      logAuditEvent('PAYMENT_PROCESSED', `Payment of $${bill.totalAmount.toFixed(2)} received for Invoice ${bill.id}`, user?.id, user?.name);
+  async updateBillStatus(billId, status, currentUser) {
+    try {
+      const response = await axiosInstance.patch(`/billing/${billId}/status`, { payment_status: status });
+      const updated = normalizeBill(response.data);
 
-      if (bill.patientUserId) {
-        notificationService.createNotification({
-          userId: bill.patientUserId,
-          title: 'Payment Receipt Confirmed',
-          message: `Your payment of $${bill.totalAmount.toFixed(2)} for invoice ${bill.id} was processed successfully.`,
-          type: 'BILLING',
-        });
-      }
+      const cached = getItem(STORAGE_KEYS.BILLS, []);
+      const idx = cached.findIndex(b => String(b.id) === String(billId));
+      if (idx !== -1) { cached[idx] = updated; setItem(STORAGE_KEYS.BILLS, cached); }
 
-      return { bill, paymentRecord };
-    });
-  }
+      return updated;
+    } catch (err) {
+      throw new Error(err?.response?.data?.detail || err.message || 'Failed to update invoice');
+    }
+  },
 };

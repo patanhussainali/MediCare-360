@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Activity, Mail, Lock, Phone, AlertCircle, CheckCircle2, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import PhoneInput from '../../components/common/PhoneInput';
 
 const Register = () => {
   const { registerPatient } = useAuth();
@@ -107,7 +108,7 @@ const Register = () => {
                 </div>
                 <div>
                   <label className={labelClass}>Phone Number</label>
-                  <input type="tel" required value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+1 (555) 019-2834" className={inputClass} />
+                  <PhoneInput required value={form.phone} onChange={phone => setForm({ ...form, phone })} placeholder="10-digit mobile number" className={inputClass} />
                 </div>
                 <div>
                   <label className={labelClass}>Gender</label>

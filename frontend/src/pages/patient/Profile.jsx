@@ -3,12 +3,17 @@ import { User, Phone, Mail, MapPin, Calendar, Heart, Save, CheckCircle2 } from '
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { patientService } from '../../services/patientService';
+import PhoneInput from '../../components/common/PhoneInput';
 
 const Profile = () => {
   const { currentUser } = useAuth();
   const { patients, refreshData } = useData();
 
-  const myProfile = patients.find(p => p.userId === currentUser?.id || p.id === currentUser?.profileId) || {
+  const myProfile = patients.find(p =>
+    String(p.userId) === String(currentUser?.id) ||
+    p.patientId === currentUser?.profileId ||
+    String(p.id) === String(currentUser?.profileId)
+  ) || {
     name: currentUser?.name || '',
     email: currentUser?.email || '',
     phone: '',
@@ -78,10 +83,9 @@ const Profile = () => {
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
-              <input
-                type="text"
+              <PhoneInput
                 value={form.phone}
-                onChange={e => setForm({...form, phone: e.target.value})}
+                onChange={phone => setForm({ ...form, phone })}
                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
               />
             </div>

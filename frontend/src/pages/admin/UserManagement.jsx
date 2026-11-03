@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PhoneInput from '../../components/common/PhoneInput';
 import {
   Users, UserPlus, KeyRound, Edit, Trash2, Shield,
   Stethoscope, HeartPulse, UserCheck, Pill, FlaskConical,
@@ -12,6 +13,8 @@ import Modal from '../../components/common/Modal';
 import StatCard from '../../components/common/StatCard';
 import { userService } from '../../services/userService';
 import { formatDate } from '../../utils/formatters';
+import { DEFAULT_DEPARTMENTS } from '../../utils/storage';
+import { getAssignmentsForRole } from '../../utils/roleAssignments';
 
 const ROLE_OPTIONS = [
   { id: 'DOCTOR', label: 'Doctor', icon: Stethoscope, color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' },
@@ -44,7 +47,7 @@ const UserManagement = () => {
     email: '',
     password: '',
     role: 'DOCTOR',
-    department: 'Cardiology',
+    department: '',
     phone: '',
     status: 'Active',
   });
@@ -66,6 +69,15 @@ const UserManagement = () => {
       setUsersList(res.data || []);
     } catch (e) {
       console.error('Error fetching users:', e);
+      // Show a user‑friendly error only if the backend is reachable but returned an error.
+      // If the backend is unreachable (network error), keep the existing list (may be empty) and display a toast.
+      if (e?.response?.data?.detail) {
+        setError(e.response.data.detail);
+      } else if (e?.message) {
+        setError(e.message);
+      } else {
+        setError('Failed to fetch users.');
+      }
     } finally {
       setLoading(false);
     }
@@ -85,7 +97,18 @@ const UserManagement = () => {
     setCreateForm({
       ...createForm,
       role: newRole,
-      password: `${roleCapital}@123`
+      password: `${roleCapital}@123`,
+      department: '',
+    });
+  };
+
+  const handleRoleChangeInEdit = (newRole) => {
+    const validList = getAssignmentsForRole(newRole);
+    const isStillValid = validList.includes(editForm.department);
+    setEditForm({
+      ...editForm,
+      role: newRole,
+      department: isStillValid ? editForm.department : '',
     });
   };
 
@@ -102,7 +125,7 @@ const UserManagement = () => {
         email: '',
         password: '',
         role: 'DOCTOR',
-        department: 'Cardiology',
+        department: '',
         phone: '',
         status: 'Active',
       });
@@ -115,11 +138,13 @@ const UserManagement = () => {
 
   const openEditModal = (user) => {
     setSelectedUser(user);
+    const validAssignments = getAssignmentsForRole(user.role);
+    const currentDept = user.department || '';
     setEditForm({
-      name: user.name,
-      email: user.email,
+      name: user.name || user.full_name || '',
+      email: user.email || '',
       role: user.role,
-      department: user.department || '',
+      department: validAssignments.includes(currentDept) ? currentDept : (currentDept || ''),
       phone: user.phone || '',
     });
     setError('');
@@ -464,8 +489,26 @@ const UserManagement = () => {
         onClose={() => setIsCreateOpen(false)}
         title="Create New User Account (Assign Role & Credentials)"
         maxWidth="max-w-2xl"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setIsCreateOpen(false)}
+              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold text-xs transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="createUserForm"
+              className="px-5 py-2 bg-hospital-600 hover:bg-hospital-700 active:bg-hospital-800 text-white font-bold text-xs rounded-xl shadow-soft transition"
+            >
+              Create Account
+            </button>
+          </>
+        }
       >
-        <form onSubmit={handleCreateUser} className="space-y-4 text-xs">
+        <form id="createUserForm" onSubmit={handleCreateUser} className="space-y-4 text-xs">
           {error && (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -474,10 +517,10 @@ const UserManagement = () => {
           )}
 
           <div>
-            <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
               Target Role Assignment <span className="text-hospital-600">*</span>
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="flex flex-wrap gap-2">
               {ROLE_OPTIONS.map((r) => {
                 const isSelected = createForm.role === r.id;
                 const IconComponent = r.icon;
@@ -486,21 +529,21 @@ const UserManagement = () => {
                     key={r.id}
                     type="button"
                     onClick={() => handleRoleChangeInCreate(r.id)}
-                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all ${
+                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
                       isSelected
-                        ? 'border-hospital-600 bg-hospital-50 dark:bg-hospital-950/30 text-hospital-800 dark:text-hospital-200 font-bold shadow-xs'
-                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50'
+                        ? 'border-hospital-500 bg-hospital-50/90 dark:bg-hospital-950/40 text-hospital-700 dark:text-hospital-300 ring-2 ring-hospital-500/20 shadow-xs'
+                        : 'border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/40 text-slate-600 dark:text-slate-300 hover:bg-slate-100 hover:border-slate-300'
                     }`}
                   >
-                    <IconComponent className="w-4 h-4 shrink-0 text-hospital-600" />
-                    <span className="truncate">{r.label}</span>
+                    <IconComponent className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-hospital-600 dark:text-hospital-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                    <span>{r.label}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Full Legal Name <span className="text-hospital-600">*</span>
@@ -511,7 +554,7 @@ const UserManagement = () => {
                 placeholder={createForm.role === 'DOCTOR' ? 'Dr. Alexander Wright' : 'Sarah Jenkins'}
                 value={createForm.name}
                 onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
               />
             </div>
 
@@ -525,7 +568,7 @@ const UserManagement = () => {
                 placeholder={`${createForm.role.toLowerCase()}@hospital.com`}
                 value={createForm.email}
                 onChange={e => setCreateForm({ ...createForm, email: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
               />
             </div>
 
@@ -538,42 +581,52 @@ const UserManagement = () => {
                 required
                 value={createForm.password}
                 onChange={e => setCreateForm({ ...createForm, password: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
               />
-              <p className="text-[10px] text-slate-400 mt-0.5">Password will be cryptographically hashed upon creation.</p>
+              <p className="text-[10px] text-slate-400 mt-1">Password will be cryptographically hashed upon creation.</p>
             </div>
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Phone Number
               </label>
-              <input
-                type="text"
-                placeholder="+1 (555) 000-0000"
+              <PhoneInput
                 value={createForm.phone}
-                onChange={e => setCreateForm({ ...createForm, phone: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+                onChange={phone => setCreateForm({ ...createForm, phone })}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
               />
             </div>
 
-            <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Assigned Department
-              </label>
-              <select
-                value={createForm.department}
-                onChange={e => setCreateForm({ ...createForm, department: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
-              >
-                {departments.map(d => (
-                  <option key={d.id} value={d.name}>{d.name}</option>
-                ))}
-                <option value="Executive Administration">Executive Administration</option>
-                <option value="General Healthcare">General Healthcare</option>
-                <option value="Pharmacy">Pharmacy</option>
-                <option value="Diagnostics Lab">Diagnostics Lab</option>
-              </select>
-            </div>
+            {createForm.role !== 'PATIENT' ? (
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Assigned Department / Designation <span className="text-hospital-600">*</span>
+                </label>
+                <select
+                  required
+                  value={createForm.department}
+                  onChange={e => setCreateForm({ ...createForm, department: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
+                >
+                  <option value="">Select Department / Unit...</option>
+                  {getAssignmentsForRole(createForm.role).map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="opacity-60">
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Assigned Department
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value="N/A (Patient Account)"
+                  className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 text-xs italic cursor-not-allowed"
+                />
+              </div>
+            )}
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -582,28 +635,12 @@ const UserManagement = () => {
               <select
                 value={createForm.status}
                 onChange={e => setCreateForm({ ...createForm, status: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
               >
                 <option value="Active">Active (Immediate Login Granted)</option>
                 <option value="Inactive">Inactive (Suspended)</option>
               </select>
             </div>
-          </div>
-
-          <div className="pt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setIsCreateOpen(false)}
-              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 bg-hospital-600 hover:bg-hospital-700 text-white font-bold rounded-xl shadow-soft"
-            >
-              Create Account
-            </button>
           </div>
         </form>
       </Modal>
@@ -614,8 +651,26 @@ const UserManagement = () => {
         onClose={() => setIsEditOpen(false)}
         title={`Edit User Details & Role: ${selectedUser?.name || ''}`}
         maxWidth="max-w-xl"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setIsEditOpen(false)}
+              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold text-xs transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="editUserForm"
+              className="px-5 py-2 bg-hospital-600 hover:bg-hospital-700 active:bg-hospital-800 text-white font-bold text-xs rounded-xl shadow-soft transition"
+            >
+              Save Changes
+            </button>
+          </>
+        }
       >
-        <form onSubmit={handleUpdateUser} className="space-y-4 text-xs">
+        <form id="editUserForm" onSubmit={handleUpdateUser} className="space-y-4 text-xs">
           {error && (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -629,8 +684,8 @@ const UserManagement = () => {
             </label>
             <select
               value={editForm.role}
-              onChange={e => setEditForm({ ...editForm, role: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold"
+              onChange={e => handleRoleChangeInEdit(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
             >
               {ROLE_OPTIONS.map(r => (
                 <option key={r.id} value={r.id}>{r.label} ({r.id})</option>
@@ -645,7 +700,7 @@ const UserManagement = () => {
               required
               value={editForm.name}
               onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
             />
           </div>
 
@@ -656,45 +711,49 @@ const UserManagement = () => {
               required
               value={editForm.email}
               onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Department</label>
-              <input
-                type="text"
-                value={editForm.department}
-                onChange={e => setEditForm({ ...editForm, department: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
-              />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {editForm.role !== 'PATIENT' ? (
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Department / Designation <span className="text-hospital-600">*</span>
+                </label>
+                <select
+                  required
+                  value={editForm.department}
+                  onChange={e => setEditForm({ ...editForm, department: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
+                >
+                  <option value="">Select Department / Unit...</option>
+                  {getAssignmentsForRole(editForm.role).map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="opacity-60">
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Department / Assignment
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value="N/A (Patient Account)"
+                  className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 text-xs italic cursor-not-allowed"
+                />
+              </div>
+            )}
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
-              <input
-                type="text"
+              <PhoneInput
                 value={editForm.phone}
-                onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+                onChange={phone => setEditForm({ ...editForm, phone })}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
               />
             </div>
-          </div>
-
-          <div className="pt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setIsEditOpen(false)}
-              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 bg-hospital-600 hover:bg-hospital-700 text-white font-bold rounded-xl shadow-soft"
-            >
-              Save Changes
-            </button>
           </div>
         </form>
       </Modal>
@@ -705,8 +764,26 @@ const UserManagement = () => {
         onClose={() => setIsResetPassOpen(false)}
         title={`Reset Password for ${selectedUser?.name || ''}`}
         maxWidth="max-w-md"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setIsResetPassOpen(false)}
+              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold text-xs transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="resetPassForm"
+              className="px-5 py-2 bg-hospital-600 hover:bg-hospital-700 active:bg-hospital-800 text-white font-bold text-xs rounded-xl shadow-soft transition"
+            >
+              Update Password
+            </button>
+          </>
+        }
       >
-        <form onSubmit={handleResetPassword} className="space-y-4 text-xs">
+        <form id="resetPassForm" onSubmit={handleResetPassword} className="space-y-4 text-xs">
           {error && (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -726,24 +803,8 @@ const UserManagement = () => {
               placeholder="Enter at least 6 characters..."
               value={newPassword}
               onChange={e => setNewPassword(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
             />
-          </div>
-
-          <div className="pt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setIsResetPassOpen(false)}
-              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 bg-hospital-600 hover:bg-hospital-700 text-white font-bold rounded-xl shadow-soft"
-            >
-              Update Password
-            </button>
           </div>
         </form>
       </Modal>

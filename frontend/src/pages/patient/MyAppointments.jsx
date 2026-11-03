@@ -9,9 +9,17 @@ import { appointmentService } from '../../services/appointmentService';
 
 const MyAppointments = () => {
   const { currentUser } = useAuth();
-  const { appointments, refreshData } = useData();
+  const { appointments, patients, refreshData } = useData();
 
-  const myAppointments = appointments.filter(a => a.patientUserId === currentUser?.id || a.patientId === currentUser?.profileId);
+  const myPatient = patients.find(p =>
+    String(p.userId) === String(currentUser?.id) ||
+    String(p.id) === String(currentUser?.profileId) ||
+    p.patientId === currentUser?.profileId
+  );
+  const myAppointments = appointments.filter(a =>
+    String(a.patientId) === String(myPatient?.id) ||
+    String(a.patientUserId) === String(currentUser?.id)
+  );
 
   const handleCancel = async (id) => {
     if (window.confirm('Are you sure you want to cancel this appointment?')) {
@@ -26,7 +34,7 @@ const MyAppointments = () => {
     { header: 'Department', accessor: 'department' },
     { header: 'Date', render: (r) => formatDate(r.appointmentDate) },
     { header: 'Time Slot', accessor: 'timeSlot' },
-    { header: 'Type', accessor: 'appointmentType' },
+    { header: 'Type', accessor: 'type' },
     { header: 'Status', render: (r) => <Badge status={r.status} /> },
     {
       header: 'Actions',

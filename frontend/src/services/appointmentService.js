@@ -1,125 +1,115 @@
-import { getItem, setItem, STORAGE_KEYS } from '../utils/storage';
-import { mockApiCall } from './apiClient';
-import { logAuditEvent } from './auditService';
-import { notificationService } from './notificationService';
+/**
+ * appointmentService.js — MediCare360 Appointment Service
+ * All operations call the Java Spring Boot backend.
+ */
+
+import { axiosInstance } from './apiClient.js';
+import { getItem, setItem, STORAGE_KEYS } from '../utils/storage.js';
+import { logAuditEvent } from './auditService.js';
+
+export const normalizeAppointment = (a) => {
+  if (!a) return null;
+  return {
+    id: a.id,
+    appointmentNumber: a.appointment_number || a.appointmentNumber || `APT-${a.id}`,
+    patientId: a.patient_id ?? a.patientId,
+    patientName: a.patient_name || a.patientName || 'Unknown Patient',
+    doctorId: a.doctor_id ?? a.doctorId,
+    doctorName: a.doctor_name || a.doctorName || 'Unknown Doctor',
+    departmentId: a.department_id ?? a.departmentId,
+    department: a.department_name || a.department || '',
+    appointmentDate: a.appointment_date || a.appointmentDate || '',
+    timeSlot: a.appointment_time || a.appointmentTime || a.timeSlot || '',
+    appointmentTime: a.appointment_time || a.appointmentTime || a.timeSlot || '',
+    type: a.type || 'General Consultation',
+    reason: a.reason || '',
+    status: a.status || 'Scheduled',
+    notes: a.notes || '',
+    createdAt: a.created_at || a.createdAt || new Date().toISOString(),
+    updatedAt: a.updated_at || a.updatedAt || null,
+  };
+};
 
 export const appointmentService = {
-  async getAllAppointments() {
-    return mockApiCall(() => getItem(STORAGE_KEYS.APPOINTMENTS, []));
+  async getAllAppointments(patientId, doctorId) {
+    try {
+      const params = new URLSearchParams({ limit: 200 });
+      if (patientId) params.append('patient_id', patientId);
+      if (doctorId)  params.append('doctor_id', doctorId);
+      const response = await axiosInstance.get(`/appointments?${params.toString()}`);
+      const normalized = (response.data || []).map(normalizeAppointment);
+      setItem(STORAGE_KEYS.APPOINTMENTS, normalized);
+      return { success: true, data: normalized };
+    } catch (err) {
+      return { success: true, data: getItem(STORAGE_KEYS.APPOINTMENTS, []) };
+    }
   },
 
   async getAppointmentsByPatient(patientId) {
-    return mockApiCall(() => {
-      const appointments = getItem(STORAGE_KEYS.APPOINTMENTS, []);
-      return appointments.filter(a => a.patientId === patientId || a.patientUserId === patientId);
-    });
+    return this.getAllAppointments(patientId, null);
   },
 
   async getAppointmentsByDoctor(doctorId) {
-    return mockApiCall(() => {
-      const appointments = getItem(STORAGE_KEYS.APPOINTMENTS, []);
-      return appointments.filter(a => a.doctorId === doctorId || a.doctorUserId === doctorId);
-    });
+    return this.getAllAppointments(null, doctorId);
   },
 
+  /**
+   * Book an appointment.
+   * patientId and doctorId must be numeric DB PKs.
+   */
   async bookAppointment(bookingData, currentUser) {
-    return mockApiCall(() => {
-      const appointments = getItem(STORAGE_KEYS.APPOINTMENTS, []);
-      const doctors = getItem(STORAGE_KEYS.DOCTORS, []);
-      const patients = getItem(STORAGE_KEYS.PATIENTS, []);
+    // Resolve numeric IDs — the select values are now numeric PKs
+    const patientId = Number(bookingData.patientId);
+    const doctorId  = Number(bookingData.doctorId);
 
-      // Validate target doctor and patient exist in real application state
-      const doctor = doctors.find(d => d.id === bookingData.doctorId || d.name === bookingData.doctorName);
-      if (!doctor) throw new Error('Selected doctor is not registered in the system.');
+    if (!patientId || isNaN(patientId)) throw new Error('Please select a valid patient.');
+    if (!doctorId  || isNaN(doctorId))  throw new Error('Please select a valid doctor.');
 
-      let patientName = bookingData.patientName;
-      let patientId = bookingData.patientId;
-      let patientPhone = bookingData.patientPhone || '';
+    const payload = {
+      patient_id:        patientId,
+      doctor_id:         doctorId,
+      appointment_date:  bookingData.appointmentDate,
+      appointment_time:  bookingData.timeSlot || bookingData.appointmentTime || '09:00 AM',
+      type:              bookingData.appointmentType || 'General Consultation',
+      reason:            bookingData.reason || '',
+      notes:             bookingData.notes  || '',
+      status:            'Scheduled',
+    };
 
-      if (currentUser && currentUser.role === 'PATIENT') {
-        const patientProfile = patients.find(p => p.userId === currentUser.id || p.id === currentUser.profileId);
-        if (patientProfile) {
-          patientName = patientProfile.name;
-          patientId = patientProfile.id;
-          patientPhone = patientProfile.phone;
-        }
-      }
+    try {
+      const response = await axiosInstance.post('/appointments', payload);
+      const created = normalizeAppointment(response.data);
 
-      const appointmentId = `APT-${Math.floor(100000 + Math.random() * 900000)}`;
+      const cached = getItem(STORAGE_KEYS.APPOINTMENTS, []);
+      cached.unshift(created);
+      setItem(STORAGE_KEYS.APPOINTMENTS, cached);
 
-      const newAppointment = {
-        id: appointmentId,
-        patientId: patientId || `PAT-GUEST`,
-        patientUserId: currentUser?.role === 'PATIENT' ? currentUser.id : null,
-        patientName: patientName || 'Walk-in Patient',
-        patientPhone: patientPhone,
-        doctorId: doctor.id,
-        doctorUserId: doctor.userId,
-        doctorName: doctor.name,
-        department: doctor.department || bookingData.department,
-        appointmentDate: bookingData.appointmentDate,
-        timeSlot: bookingData.timeSlot,
-        appointmentType: bookingData.appointmentType || 'In-Person Consultation',
-        reason: bookingData.reason,
-        status: 'Scheduled', // 'Scheduled', 'In Progress', 'Completed', 'Cancelled'
-        createdAt: new Date().toISOString(),
-      };
-
-      appointments.unshift(newAppointment);
-      setItem(STORAGE_KEYS.APPOINTMENTS, appointments);
-
-      logAuditEvent('BOOK_APPOINTMENT', `Appointment booked (${newAppointment.id}) with ${doctor.name} for ${newAppointment.patientName}`, currentUser?.id, currentUser?.name);
-
-      // Trigger real notifications to Doctor & Patient
-      notificationService.createNotification({
-        userId: doctor.userId,
-        title: 'New Appointment Booked',
-        message: `Appointment ${newAppointment.id} scheduled with ${newAppointment.patientName} on ${newAppointment.appointmentDate} at ${newAppointment.timeSlot}.`,
-        type: 'APPOINTMENT',
-      });
-
-      if (currentUser?.id) {
-        notificationService.createNotification({
-          userId: currentUser.id,
-          title: 'Appointment Confirmed',
-          message: `Your appointment ${newAppointment.id} with ${doctor.name} has been confirmed for ${newAppointment.appointmentDate} at ${newAppointment.timeSlot}.`,
-          type: 'APPOINTMENT',
-        });
-      }
-
-      return newAppointment;
-    });
+      logAuditEvent('BOOK_APPOINTMENT', `Appointment ${created.appointmentNumber} booked`, currentUser?.id, currentUser?.name);
+      return created;
+    } catch (err) {
+      throw new Error(err?.response?.data?.detail || err.message || 'Failed to book appointment');
+    }
   },
 
   async updateAppointmentStatus(appointmentId, status, note, currentUser) {
-    return mockApiCall(() => {
-      const appointments = getItem(STORAGE_KEYS.APPOINTMENTS, []);
-      const index = appointments.findIndex(a => a.id === appointmentId);
-      if (index === -1) throw new Error('Appointment not found');
+    try {
+      // Use the status sub-endpoint
+      const payload = { status, notes: note || '' };
+      const response = await axiosInstance.patch(`/appointments/${appointmentId}/status`, payload);
+      const updated = normalizeAppointment(response.data);
 
-      appointments[index].status = status;
-      if (note) appointments[index].statusNote = note;
-      appointments[index].updatedAt = new Date().toISOString();
+      const cached = getItem(STORAGE_KEYS.APPOINTMENTS, []);
+      const idx = cached.findIndex(a => String(a.id) === String(appointmentId));
+      if (idx !== -1) { cached[idx] = updated; setItem(STORAGE_KEYS.APPOINTMENTS, cached); }
 
-      setItem(STORAGE_KEYS.APPOINTMENTS, appointments);
-
-      logAuditEvent('UPDATE_APPOINTMENT_STATUS', `Appointment ${appointmentId} status changed to ${status}`, currentUser?.id, currentUser?.name);
-
-      // Notify Patient if registered
-      if (appointments[index].patientUserId) {
-        notificationService.createNotification({
-          userId: appointments[index].patientUserId,
-          title: `Appointment ${status}`,
-          message: `Your appointment ${appointmentId} with ${appointments[index].doctorName} status updated to: ${status}.`,
-          type: 'APPOINTMENT',
-        });
-      }
-
-      return appointments[index];
-    });
+      logAuditEvent('UPDATE_APPOINTMENT', `Appointment #${appointmentId} → ${status}`, currentUser?.id, currentUser?.name);
+      return updated;
+    } catch (err) {
+      throw new Error(err?.response?.data?.detail || err.message || 'Failed to update appointment');
+    }
   },
 
   async cancelAppointment(appointmentId, reason, currentUser) {
     return this.updateAppointmentStatus(appointmentId, 'Cancelled', reason, currentUser);
-  }
+  },
 };

@@ -8,7 +8,7 @@ import { medicalRecordService } from '../../services/medicalRecordService';
 
 const AssignedPatients = () => {
   const { currentUser } = useAuth();
-  const { patients, medicalRecords, refreshData } = useData();
+  const { patients, medicalRecords, appointments, refreshData } = useData();
 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -28,6 +28,7 @@ const AssignedPatients = () => {
       await medicalRecordService.createRecord({
         patientId: selectedPatient.id,
         patientName: selectedPatient.name,
+        doctorId: appointments.find(appointment => String(appointment.patientId) === String(selectedPatient.id))?.doctorId,
         diagnosis: 'Routine Nursing Vitals Log',
         symptoms: 'N/A',
         vitals,

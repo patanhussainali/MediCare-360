@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { getItem, STORAGE_KEYS, resetSystemStorage } from '../utils/storage';
+import { useAuth } from './AuthContext';
 import { patientService } from '../services/patientService';
 import { doctorService } from '../services/doctorService';
 import { staffService } from '../services/staffService';
@@ -15,6 +16,7 @@ import { auditService } from '../services/auditService';
 const DataContext = createContext(null);
 
 export const DataProvider = ({ children }) => {
+  const { currentUser } = useAuth();
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [nurses, setNurses] = useState([]);
@@ -22,6 +24,9 @@ export const DataProvider = ({ children }) => {
   const [pharmacists, setPharmacists] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [medicalRecords, setMedicalRecords] = useState([]);
+  const [medicalRecordError, setMedicalRecordError] = useState('');
+  const refreshInFlightRef = useRef(null);
+  const medicalRecordRefreshRef = useRef(null);
   const [prescriptions, setPrescriptions] = useState([]);
   const [medicines, setMedicines] = useState([]);
   const [bills, setBills] = useState([]);
@@ -58,15 +63,35 @@ export const DataProvider = ({ children }) => {
     const token = getItem(STORAGE_KEYS.TOKEN, null);
     if (!token) return;
     try {
-      const [docRes, patRes] = await Promise.allSettled([
+      const [docRes, patRes, depRes, staffRes, prescRes, apptRes, billRes, medRes, recordRes] = await Promise.allSettled([
         doctorService.getAllDoctors(),
-        patientService.getAllPatients()
+        patientService.getAllPatients(),
+        departmentService.getAllDepartments(),
+        staffService.getAllStaff(),
+        prescriptionService.getAllPrescriptions(),
+        appointmentService.getAllAppointments(),
+        billingService.getAllBills(),
+        pharmacyService.getAllMedicines(),
+        medicalRecordService.getAllRecords(),
       ]);
-      if (docRes.status === 'fulfilled' && docRes.value?.data?.length > 0) {
-        setDoctors(docRes.value.data);
+      if (docRes.status === 'fulfilled' && docRes.value?.data)   setDoctors(docRes.value.data);
+      if (patRes.status === 'fulfilled' && patRes.value?.data)   setPatients(patRes.value.data);
+      if (depRes.status === 'fulfilled' && depRes.value?.data)   setDepartments(depRes.value.data);
+      if (staffRes.status === 'fulfilled' && staffRes.value?.data) {
+        const { nurses: n, receptionists: r, pharmacists: p } = staffRes.value.data;
+        setNurses(Array.isArray(n) ? n : []);
+        setReceptionists(Array.isArray(r) ? r : []);
+        setPharmacists(Array.isArray(p) ? p : []);
       }
-      if (patRes.status === 'fulfilled' && patRes.value?.data?.length > 0) {
-        setPatients(patRes.value.data);
+      if (prescRes.status === 'fulfilled' && prescRes.value?.data) setPrescriptions(prescRes.value.data);
+      if (apptRes.status === 'fulfilled' && apptRes.value?.data)   setAppointments(apptRes.value.data);
+      if (billRes.status === 'fulfilled' && billRes.value?.data)   setBills(billRes.value.data);
+      if (medRes.status === 'fulfilled' && medRes.value?.data)     setMedicines(medRes.value.data);
+      if (recordRes.status === 'fulfilled' && recordRes.value?.data) {
+        setMedicalRecords(recordRes.value.data);
+        setMedicalRecordError(recordRes.value.success === false ? recordRes.value.error : '');
+      } else {
+        setMedicalRecordError('Unable to load laboratory referrals. Please try again.');
       }
     } catch (err) {
       console.warn('Backend sync failed:', err);
@@ -74,25 +99,50 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   const fetchAllData = useCallback(async () => {
+    if (refreshInFlightRef.current) return refreshInFlightRef.current;
     loadLocalData();
-    await syncBackendData();
+    const request = syncBackendData();
+    refreshInFlightRef.current = request;
+    try {
+      await request;
+    } finally {
+      if (refreshInFlightRef.current === request) refreshInFlightRef.current = null;
+    }
   }, [loadLocalData, syncBackendData]);
+
+  const refreshMedicalRecords = useCallback(async () => {
+    if (medicalRecordRefreshRef.current) return medicalRecordRefreshRef.current;
+    const request = medicalRecordService.getAllRecords();
+    medicalRecordRefreshRef.current = request;
+    try {
+      const result = await request;
+      setMedicalRecords(result.data || []);
+      setMedicalRecordError(result.success === false ? result.error : '');
+      return result;
+    } finally {
+      if (medicalRecordRefreshRef.current === request) medicalRecordRefreshRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
-    loadLocalData();
-    syncBackendData();
+    if (currentUser) fetchAllData();
+    else loadLocalData();
 
-    // Storage event only syncs local state, never triggers remote network requests to avoid loops
     const handleStorageChange = () => loadLocalData();
+    const handleRefreshRequest = () => fetchAllData();
     window.addEventListener('medicare360_storage_updated', handleStorageChange);
-    return () => window.removeEventListener('medicare360_storage_updated', handleStorageChange);
-  }, [loadLocalData, syncBackendData]);
+    window.addEventListener('medicare360_refresh_data', handleRefreshRequest);
+    return () => {
+      window.removeEventListener('medicare360_storage_updated', handleStorageChange);
+      window.removeEventListener('medicare360_refresh_data', handleRefreshRequest);
+    };
+  }, [currentUser, fetchAllData, loadLocalData]);
 
   // Derived Real Dashboard Stats
   const stats = {
     totalPatients: patients.length,
     totalDoctors: doctors.length,
-    activeDoctors: doctors.filter(d => d.status === 'Active').length,
+    activeDoctors: doctors.filter(d => !d.status || ['active', 'available'].includes(String(d.status).toLowerCase())).length,
     totalNurses: nurses.length,
     totalReceptionists: receptionists.length,
     totalPharmacists: pharmacists.length,
@@ -128,6 +178,8 @@ export const DataProvider = ({ children }) => {
       pharmacists,
       appointments,
       medicalRecords,
+      medicalRecordError,
+      refreshMedicalRecords,
       prescriptions,
       medicines,
       bills,

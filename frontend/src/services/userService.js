@@ -65,6 +65,7 @@ export const userService = {
     const role = (userData.role || 'PATIENT').toUpperCase();
     const rawPassword = userData.password || `${role.charAt(0) + role.slice(1).toLowerCase()}@123`;
     const cleanEmail = userData.email.trim().toLowerCase();
+    const cleanDept = role === 'PATIENT' ? null : (userData.department?.trim() || null);
 
     try {
       let response;
@@ -75,7 +76,7 @@ export const userService = {
           password: rawPassword,
           phone_number: userData.phone || null,
           role: role,
-          department: userData.department || null,
+          department: cleanDept,
         });
       } catch (adminEndpointErr) {
         if (adminEndpointErr?.response?.status === 404 || adminEndpointErr?.response?.status === 401) {
@@ -85,7 +86,7 @@ export const userService = {
             password: rawPassword,
             phone_number: userData.phone || null,
             role: role,
-            department: userData.department || null,
+            department: cleanDept,
           });
         } else {
           throw adminEndpointErr;
@@ -131,6 +132,7 @@ export const userService = {
       if (updateData.email) payload.email = updateData.email.trim().toLowerCase();
       if (updateData.phone !== undefined) payload.phone = updateData.phone;
       if (updateData.role) payload.role = updateData.role.toUpperCase();
+      if (updateData.department !== undefined) payload.department = updateData.department;
 
       const response = await axiosInstance.patch(`/users/${userId}`, payload);
       const updatedUser = normalizeUser(response.data);

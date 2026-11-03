@@ -46,6 +46,10 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/departments/role-assignments").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/departments/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/check-admin").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login/form").permitAll()
@@ -76,6 +80,7 @@ public class SecurityConfig {
 
         List<String> origins = Arrays.asList(allowedOriginsRaw.split(","));
         configuration.setAllowedOrigins(origins);
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:[*]", "http://127.0.0.1:[*]", "http://localhost:*", "http://127.0.0.1:*", "https://*"));
         configuration.setAllowedMethods(List.of("*"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

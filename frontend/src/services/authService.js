@@ -115,7 +115,8 @@ export const authService = {
       return { success: true, data: { user: userSession, token: access_token } };
     } catch (err) {
       if (err?.response?.status === 401 || err?.response?.status === 400) {
-        throw new Error('Invalid credentials or unauthorized role.');
+        const detail = err?.response?.data?.detail || err?.response?.data?.message;
+        throw new Error(detail || 'Invalid credentials or unauthorized role.');
       }
 
       const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
@@ -205,7 +206,8 @@ export const authService = {
         return { success: true, data: newPatient };
       }
 
-      const detail = err?.response?.data?.detail || err.message || 'Registration failed';
+      const errData = err?.response?.data;
+      const detail = (errData?.errors?.join(', ')) || errData?.detail || err.message || 'Registration failed';
       throw new Error(detail);
     }
   },

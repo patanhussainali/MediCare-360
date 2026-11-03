@@ -44,7 +44,7 @@ const NurseDashboard = () => {
             {patients.map(p => (
               <div key={p.id} className="py-3 flex justify-between items-center">
                 <div>
-                  <p className="font-bold text-slate-800 dark:text-white">{p.name} ({p.id})</p>
+                  <p className="font-bold text-slate-800 dark:text-white">{p.name} ({p.patientId || p.id})</p>
                   <p className="text-slate-400">Gender: {p.gender} &bull; DOB: {p.dateOfBirth || 'N/A'}</p>
                 </div>
                 <Link

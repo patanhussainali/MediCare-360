@@ -2,6 +2,7 @@ import React from 'react';
 import { User, Stethoscope, Mail, Phone, Building } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
+import { formatCurrency } from '../../utils/formatters';
 
 const DoctorProfile = () => {
   const { currentUser } = useAuth();
@@ -41,7 +42,7 @@ const DoctorProfile = () => {
           </div>
           <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-700">
             <span className="text-slate-400 font-medium">Consultation Fee</span>
-            <p className="text-sm font-bold text-slate-800 dark:text-white mt-1">${doctor.consultationFee}</p>
+            <p className="text-sm font-bold text-slate-800 dark:text-white mt-1">{formatCurrency(doctor.consultationFee)}</p>
           </div>
           <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-700">
             <span className="text-slate-400 font-medium">Email Address</span>

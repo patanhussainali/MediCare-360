@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getItem, setItem, STORAGE_KEYS } from '../utils/storage.js';
+import { getItem, setItem, removeItem, STORAGE_KEYS } from '../utils/storage.js';
 
 const isBrowser = typeof window !== 'undefined';
 const isLocalhost = isBrowser && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -28,7 +28,15 @@ export const getApiBaseUrl = () => {
   if (isBrowser) {
     const runtimeUrl = localStorage.getItem('VITE_API_BASE_URL') || localStorage.getItem('API_BASE_URL');
     if (runtimeUrl && runtimeUrl.trim()) {
-      return normalizeApiUrl(runtimeUrl);
+      const normalizedRuntimeUrl = normalizeApiUrl(runtimeUrl);
+      const staleLocalBackend = /^http:\/\/(localhost|127\.0\.0\.1):8080\/api\/v1$/i.test(normalizedRuntimeUrl);
+      if (isLocalhost && staleLocalBackend) {
+        const migratedUrl = 'http://127.0.0.1:8000/api/v1';
+        localStorage.setItem('VITE_API_BASE_URL', migratedUrl);
+        localStorage.setItem('API_BASE_URL', migratedUrl);
+        return migratedUrl;
+      }
+      return normalizedRuntimeUrl;
     }
   }
 
@@ -77,12 +85,72 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 }, (error) => Promise.reject(error));
 
-// Interceptor for user-friendly error messages on timeouts, 404s, and network errors
+// Track whether a token refresh is already in progress to avoid multiple refreshes
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve(token);
+  });
+  failedQueue = [];
+};
+
+// Interceptor for 401 auto-refresh AND user-friendly error messages
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
     const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-    
+
+    // Auto-refresh on 401 (token expired)
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      const refreshToken = getItem(STORAGE_KEYS.REFRESH_TOKEN, null);
+      if (refreshToken) {
+        if (isRefreshing) {
+          // Queue this request until the refresh completes
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          }).then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return axiosInstance(originalRequest);
+          });
+        }
+
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        try {
+          const refreshResp = await axios.post(`${getApiBaseUrl()}/auth/refresh`, {
+            refresh_token: refreshToken,
+          }, { headers: { 'Content-Type': 'application/json' } });
+
+          const newToken = refreshResp.data.access_token;
+          setItem(STORAGE_KEYS.TOKEN, newToken);
+          if (refreshResp.data.refresh_token) {
+            setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshResp.data.refresh_token);
+          }
+
+          processQueue(null, newToken);
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return axiosInstance(originalRequest);
+        } catch (refreshErr) {
+          processQueue(refreshErr, null);
+          // Refresh failed — clear session and redirect to login
+          removeItem(STORAGE_KEYS.CURRENT_USER);
+          removeItem(STORAGE_KEYS.TOKEN);
+          removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
+          return Promise.reject(refreshErr);
+        } finally {
+          isRefreshing = false;
+        }
+      }
+    }
+
     if (error.code === 'ECONNABORTED' || (error.message && error.message.toLowerCase().includes('timeout'))) {
       error.message = isDeployed
         ? 'The backend server took too long to respond. Please check your deployed Railway service.'
@@ -90,7 +158,7 @@ axiosInstance.interceptors.response.use(
     } else if (error.code === 'ERR_NETWORK' || !error.response) {
       error.message = isDeployed
         ? 'Cannot reach live backend API. Connect your Railway backend URL via VITE_API_BASE_URL in Netlify site settings.'
-        : 'Unable to reach the backend server. Please verify the FastAPI backend is running at http://127.0.0.1:8000.';
+        : 'Unable to reach the backend server. Please verify the Java backend is running at http://127.0.0.1:8000.';
     } else if (error.response?.status === 404 && isDeployed) {
       const isHtmlResponse = typeof error.response.data === 'string' && error.response.data.includes('<!DOCTYPE');
       if (isHtmlResponse || !error.response.data?.detail) {
