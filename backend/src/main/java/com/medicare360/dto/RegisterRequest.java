@@ -1,7 +1,6 @@
 package com.medicare360.dto;
 
 import jakarta.validation.constraints.Size;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import com.medicare360.common.PhoneNumberValidator;
 import lombok.Getter;
@@ -20,7 +19,6 @@ public class RegisterRequest {
 
     private String fullName;
 
-    @NotBlank(message = "Mobile number is required.")
     @Pattern(regexp = PhoneNumberValidator.PATTERN, message = PhoneNumberValidator.MESSAGE)
     private String phoneNumber;
 

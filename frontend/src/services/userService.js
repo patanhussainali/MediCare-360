@@ -79,7 +79,9 @@ export const userService = {
           department: cleanDept,
         });
       } catch (adminEndpointErr) {
-        if (adminEndpointErr?.response?.status === 404 || adminEndpointErr?.response?.status === 401) {
+        // Only fall back to /auth/register on genuine network errors or 404 — NOT on 400/401/403
+        const status = adminEndpointErr?.response?.status;
+        if (!status || status === 404) {
           response = await axiosInstance.post('/auth/register', {
             full_name: userData.name,
             email: cleanEmail,
@@ -118,7 +120,12 @@ export const userService = {
         logAuditEvent('ADMIN_USER_CREATE', `Created new user ${localNewUser.name} (${localNewUser.role}) [Preview Mode]`, adminUser?.id, adminUser?.name);
         return { success: true, data: normalizeUser(localNewUser) };
       }
-      throw new Error(err?.response?.data?.detail || err.message || 'Failed to create user');
+      throw new Error(
+        err?.response?.data?.errors?.[0] ||
+        err?.response?.data?.detail ||
+        err.message ||
+        'Failed to create user'
+      );
     }
   },
 
