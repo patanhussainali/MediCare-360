@@ -82,7 +82,7 @@ export const prescriptionService = {
 
   /**
    * Create a new prescription via the Java backend.
-   * doctorData must include profileId (the doctors.id numeric PK) and id (users.id).
+   * doctorData must include the doctor's database ID and id (users.id).
    */
   async createPrescription(prescriptionData, doctorUser) {
     // Build the items array for the Java API: [{medicine_name, dosage, frequency, duration, instructions}]
@@ -94,13 +94,12 @@ export const prescriptionService = {
       instructions: m.instructions || '',
     }));
 
-    // The Java API requires numeric patient_id (patients.id) and doctor_id (doctors.id)
-    // patientId is already the numeric dbId from the dropdown
-    const patientId = Number(prescriptionData.patientId);
-    const doctorId  = Number(prescriptionData.doctorDbId || doctorUser?.doctorDbId || doctorUser?.profileDbId);
+    // MongoDB document IDs are strings (usually ObjectIds); never coerce them to numbers.
+    const patientId = String(prescriptionData.patientId || '').trim();
+    const doctorId = String(prescriptionData.doctorDbId || doctorUser?.doctorDbId || doctorUser?.profileDbId || '').trim();
 
-    if (!patientId || isNaN(patientId)) throw new Error('Patient ID is required to create a prescription. Please select a patient.');
-    if (!doctorId  || isNaN(doctorId))  throw new Error('Doctor profile ID is required. Make sure the doctor profile is registered.');
+    if (!patientId) throw new Error('Patient ID is required to create a prescription. Please select a patient.');
+    if (!doctorId) throw new Error('Doctor profile ID is required. Make sure the doctor profile is registered.');
 
     const payload = {
       patient_id:   patientId,

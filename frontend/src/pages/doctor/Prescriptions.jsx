@@ -24,10 +24,10 @@ const DoctorPrescriptions = () => {
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  // The numeric doctors.id (PK) needed by the backend — different from profileId string like "DOC-XXXXX"
+  // The MongoDB doctors document ID needed by the backend — distinct from the display profile ID.
   const [doctorDbId, setDoctorDbId] = useState(null);
 
-  // On mount, resolve the logged-in doctor's numeric DB id from /api/v1/doctors
+  // On mount, resolve the logged-in doctor's MongoDB document ID from /api/v1/doctors
   useEffect(() => {
     const resolveDoctor = async () => {
       try {
@@ -247,11 +247,11 @@ const DoctorPrescriptions = () => {
                 className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm">
                 <option value="">— Select Patient —</option>
                 {patients.map(p => {
-                  // Use the numeric DB primary key (dbId) as the value so the backend receives a valid integer
-                  const numericId = p.dbId || p.id;
+                  // Preserve the MongoDB document ID as a string for the backend.
+                  const patientDocumentId = p.dbId || p.id;
                   const displayMrn = p.patientId || p.patient_id || p.id;
                   return (
-                    <option key={numericId} value={numericId}>
+                    <option key={patientDocumentId} value={patientDocumentId}>
                       {p.name || p.full_name} ({displayMrn})
                     </option>
                   );
