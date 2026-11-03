@@ -56,11 +56,11 @@ export const billingService = {
 
   /**
    * Create a new invoice.
-   * patientId must be a numeric DB PK.
+   * MongoDB document IDs are passed as strings.
    */
   async createBill(billData, currentUser) {
-    const patientId = Number(billData.patientId);
-    if (!patientId || isNaN(patientId)) throw new Error('Please select a valid patient.');
+    const patientId = String(billData.patientId || '').trim();
+    if (!patientId) throw new Error('Please select a valid patient.');
 
     const lineItems = billData.items || [
       { description: billData.description || 'Consultation Fee', amount: parseFloat(billData.amount) || 150 }
@@ -72,7 +72,7 @@ export const billingService = {
 
     const payload = {
       patient_id:     patientId,
-      appointment_id: billData.appointmentId ? Number(billData.appointmentId) : null,
+      appointment_id: billData.appointmentId ? String(billData.appointmentId) : null,
       description:    billData.description || '',
       items:          lineItems,
       subtotal,

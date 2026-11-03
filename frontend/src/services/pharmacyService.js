@@ -153,19 +153,20 @@ export const pharmacyService = {
 
   /**
    * Issue medicine manually (outside of prescription dispense flow).
-   * medicineId, patientId must be numeric DB PKs.
+   * MongoDB document IDs are sent as strings.
    */
   async issueMedicine(issueData, currentUser) {
-    const medicineId = Number(issueData.medicineId);
-    const patientId  = Number(issueData.patientId);
+    const medicineId = String(issueData.medicineId || '').trim();
+    const patientId  = String(issueData.patientId || '').trim();
+    const prescriptionId = String(issueData.prescriptionId || '').trim();
 
-    if (!medicineId || isNaN(medicineId)) throw new Error('Select a valid medicine.');
-    if (!patientId  || isNaN(patientId))  throw new Error('Select a valid patient.');
+    if (!medicineId) throw new Error('Select a valid medicine.');
+    if (!patientId) throw new Error('Select a valid patient.');
 
     const payload = {
       medicine_id:     medicineId,
       patient_id:      patientId,
-      prescription_id: issueData.prescriptionId ? Number(issueData.prescriptionId) : null,
+      prescription_id: prescriptionId || null,
       quantity:        parseInt(issueData.quantity) || 1,
       notes:           issueData.notes || '',
     };

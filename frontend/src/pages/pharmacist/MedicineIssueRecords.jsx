@@ -42,9 +42,9 @@ const MedicineIssueRecords = () => {
     setError('');
     try {
       await pharmacyService.issueMedicine({
-        medicineId:     Number(form.medicineId),
-        patientId:      Number(form.patientId),
-        prescriptionId: form.prescriptionId ? Number(form.prescriptionId) : null,
+        medicineId:     form.medicineId,
+        patientId:      form.patientId,
+        prescriptionId: form.prescriptionId || null,
         quantity:       parseInt(form.quantity) || 1,
         notes:          form.notes,
       }, currentUser);
