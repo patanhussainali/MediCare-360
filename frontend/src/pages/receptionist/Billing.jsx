@@ -29,7 +29,7 @@ const ReceptionistBilling = () => {
     setLoading(true);
     try {
       await billingService.createBill({
-        patientId: Number(patientId),   // numeric DB PK
+        patientId,
         description,
         amount: parseFloat(amount),
       }, currentUser);
