@@ -19,6 +19,7 @@ const AppointmentManagement = () => {
   const [timeSlot, setTimeSlot] = useState('09:00 AM');
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
+  const todayInHospital = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
 
   const handleBook = async (e) => {
     e.preventDefault();
@@ -27,8 +28,8 @@ const AppointmentManagement = () => {
     setLoading(true);
     try {
       await appointmentService.bookAppointment({
-        patientId: Number(patientId),   // numeric DB pk
-        doctorId:  Number(doctorId),    // numeric DB pk
+        patientId,
+        doctorId,
         appointmentDate,
         timeSlot,
         appointmentType: 'Walk-in Intake',
@@ -118,6 +119,7 @@ const AppointmentManagement = () => {
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Date</label>
               <input
                 type="date"
+                min={todayInHospital}
                 required
                 value={appointmentDate}
                 onChange={e => setAppointmentDate(e.target.value)}
