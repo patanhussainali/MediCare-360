@@ -9,6 +9,16 @@ import java.util.Map;
 @RestController
 public class HealthController {
 
+    @GetMapping("/")
+    public ResponseEntity<Map<String, String>> root() {
+        return ResponseEntity.ok(Map.of(
+                "service", "medicare360",
+                "version", "1.0.0",
+                "status", "running",
+                "health", "/health"
+        ));
+    }
+
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of(
