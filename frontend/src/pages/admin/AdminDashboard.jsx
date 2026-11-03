@@ -55,7 +55,7 @@ const AdminDashboard = () => {
             </h4>
             <p className="text-xs text-slate-500 mt-1">{stats.totalNurses} Nurses &bull; {stats.totalReceptionists} Desk &bull; {stats.totalPharmacists} Pharmacy</p>
           </div>
-          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+          <div className="p-3 bg-hospital-50 text-hospital-600 rounded-2xl">
             <Users className="w-6 h-6" />
           </div>
         </div>
@@ -68,7 +68,7 @@ const AdminDashboard = () => {
             </h4>
             <p className="text-xs text-slate-500 mt-1">{stats.lowStockMedicines} low stock warnings</p>
           </div>
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl">
+          <div className="p-3 bg-hospital-50 text-hospital-600 rounded-2xl">
             <Pill className="w-6 h-6" />
           </div>
         </div>

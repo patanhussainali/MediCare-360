@@ -16,15 +16,15 @@ const PharmacyDashboard = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-purple-700 to-hospital-800 text-white p-6 md:p-8 rounded-3xl shadow-card">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-hospital-800 to-hospital-600 text-white p-6 md:p-8 rounded-3xl shadow-card">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider bg-white/20 px-3 py-1 rounded-full text-white">Pharmacy & Inventory Portal</span>
           <h2 className="text-2xl md:text-3xl font-extrabold mt-2 tracking-tight">Welcome, Pharmacist {currentUser?.name}</h2>
-          <p className="text-xs md:text-sm text-purple-100 mt-1">Drug Inventory Management & Prescription Dispensing Center</p>
+          <p className="text-xs md:text-sm text-hospital-100 mt-1">Drug Inventory Management & Prescription Dispensing Center</p>
         </div>
         <Link
           to="/pharmacist/inventory"
-          className="px-4 py-2.5 bg-white text-purple-800 hover:bg-purple-50 font-bold text-xs rounded-xl shadow-soft flex items-center gap-1.5 shrink-0"
+          className="px-4 py-2.5 bg-white text-hospital-800 hover:bg-hospital-50 font-bold text-xs rounded-xl shadow-soft flex items-center gap-1.5 shrink-0"
         >
           <Plus className="w-4 h-4" /> Add New Medicine
         </Link>

@@ -17,11 +17,11 @@ import { DEFAULT_DEPARTMENTS } from '../../utils/storage';
 import { getAssignmentsForRole } from '../../utils/roleAssignments';
 
 const ROLE_OPTIONS = [
-  { id: 'DOCTOR', label: 'Doctor', icon: Stethoscope, color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' },
-  { id: 'NURSE', label: 'Nurse', icon: HeartPulse, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' },
-  { id: 'RECEPTIONIST', label: 'Receptionist', icon: UserCheck, color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300' },
+  { id: 'DOCTOR', label: 'Doctor', icon: Stethoscope, color: 'bg-hospital-100 text-hospital-800 dark:bg-hospital-900/40 dark:text-hospital-300' },
+  { id: 'NURSE', label: 'Nurse', icon: HeartPulse, color: 'bg-hospital-100 text-hospital-800 dark:bg-hospital-900/40 dark:text-hospital-300' },
+  { id: 'RECEPTIONIST', label: 'Receptionist', icon: UserCheck, color: 'bg-hospital-100 text-hospital-800 dark:bg-hospital-900/40 dark:text-hospital-300' },
   { id: 'PHARMACIST', label: 'Pharmacist', icon: Pill, color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' },
-  { id: 'LAB_TECHNICIAN', label: 'Lab Technician', icon: FlaskConical, color: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300' },
+  { id: 'LAB_TECHNICIAN', label: 'Lab Technician', icon: FlaskConical, color: 'bg-hospital-100 text-hospital-800 dark:bg-hospital-900/40 dark:text-hospital-300' },
   { id: 'ADMIN', label: 'Administrator', icon: Shield, color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300' },
   { id: 'PATIENT', label: 'Patient', icon: User, color: 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300' },
 ];

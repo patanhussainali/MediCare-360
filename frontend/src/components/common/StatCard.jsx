@@ -2,14 +2,16 @@ import React from 'react';
 
 const StatCard = ({ title, value, icon: Icon, color = 'teal', subtext, trend }) => {
   const colorMap = {
-    teal:   'bg-hospital-500/15 text-hospital-700 border-hospital-200 dark:bg-hospital-500/20 dark:text-hospital-300 dark:border-hospital-700',
-    sage:   'bg-hospital-500/15 text-hospital-700 border-hospital-200 dark:bg-hospital-500/20 dark:text-hospital-300 dark:border-hospital-700',
-    blue:   'bg-blue-500/15 text-blue-700 border-blue-200 dark:bg-blue-500/25 dark:text-blue-300 dark:border-blue-700',
-    muted:  'bg-slate-500/10 text-slate-600 border-slate-200 dark:bg-slate-500/20 dark:text-slate-300 dark:border-slate-600',
-    soft:   'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/40 dark:text-slate-300 dark:border-slate-600',
-    amber:  'bg-amber-500/15 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-800',
-    rose:   'bg-rose-500/15 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-800',
-    purple: 'bg-purple-500/15 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-800',
+    teal:    'bg-hospital-500/15 text-hospital-700 border-hospital-200 dark:bg-hospital-500/20 dark:text-hospital-300 dark:border-hospital-700',
+    sage:    'bg-hospital-500/15 text-hospital-700 border-hospital-200 dark:bg-hospital-500/20 dark:text-hospital-300 dark:border-hospital-700',
+    blue:    'bg-hospital-500/15 text-hospital-700 border-hospital-200 dark:bg-hospital-500/20 dark:text-hospital-300 dark:border-hospital-700',
+    emerald: 'bg-hospital-500/15 text-hospital-700 border-hospital-200 dark:bg-hospital-500/20 dark:text-hospital-300 dark:border-hospital-700',
+    green:   'bg-hospital-500/15 text-hospital-700 border-hospital-200 dark:bg-hospital-500/20 dark:text-hospital-300 dark:border-hospital-700',
+    purple:  'bg-hospital-500/15 text-hospital-700 border-hospital-200 dark:bg-hospital-500/20 dark:text-hospital-300 dark:border-hospital-700',
+    muted:   'bg-slate-500/10 text-slate-600 border-slate-200 dark:bg-slate-500/20 dark:text-slate-300 dark:border-slate-600',
+    soft:    'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/40 dark:text-slate-300 dark:border-slate-600',
+    amber:   'bg-amber-500/15 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-800',
+    rose:    'bg-rose-500/15 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-800',
   };
 
   const bgStyle = colorMap[color] || colorMap.teal;
