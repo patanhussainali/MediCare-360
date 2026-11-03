@@ -43,8 +43,8 @@ mvn spring-boot:run
 mvn -DskipTests package
 
 ```
-Backend API will be accessible at: `http://127.0.0.1:8000`  
-Health check endpoint: `http://127.0.0.1:8000/health`
+Backend API will be accessible at: `http://localhost:8080`  
+Health check endpoint: `http://localhost:8080/health`
 
 ---
 
