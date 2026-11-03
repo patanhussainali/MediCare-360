@@ -22,7 +22,7 @@ public class DoctorCreateRequest {
 
     private String email;
 
-    private Long departmentId;
+    private String departmentId;
 
     private String department;
 

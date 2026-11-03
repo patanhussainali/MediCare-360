@@ -1,40 +1,40 @@
 package com.medicare360.entity;
 
 import com.medicare360.common.BaseEntity;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-@Entity
-@Table(name = "staff_schedules")
+@Document(collection = "staff_schedules")
 @Getter
 @Setter
 @NoArgsConstructor
 public class StaffSchedule extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(name = "staff_type", length = 50)
+    @Field("staff_type")
     private String staffType;
 
-    @Column(name = "staff_id")
-    private int staffId;
+    @Field("staff_id")
+    private String staffId;
 
-    @Column(name = "staff_name", length = 255)
+    @Field("staff_name")
     private String staffName;
 
-    @Column(name = "day_of_week", length = 20)
+    @Field("day_of_week")
     private String dayOfWeek;
 
-    @Column(name = "shift_start", length = 20)
+    @Field("shift_start")
     private String shiftStart;
 
-    @Column(name = "shift_end", length = 20)
+    @Field("shift_end")
     private String shiftEnd;
 
-    @Column(name = "duty_location", length = 100)
+    @Field("duty_location")
     private String dutyLocation;
 }

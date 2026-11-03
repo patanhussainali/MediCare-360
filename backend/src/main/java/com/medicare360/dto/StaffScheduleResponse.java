@@ -11,11 +11,11 @@ import java.time.Instant;
 @NoArgsConstructor
 public class StaffScheduleResponse {
 
-    private Long id;
+    private String id;
 
     private String staffType;
 
-    private Long staffId;
+    private String staffId;
 
     private String staffName;
 

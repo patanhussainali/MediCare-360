@@ -11,7 +11,7 @@ import java.time.Instant;
 @NoArgsConstructor
 public class DepartmentResponse {
 
-    private Long id;
+    private String id;
 
     private String code;
 

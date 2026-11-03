@@ -22,12 +22,12 @@ class JwtServiceTest {
 
     @Test
     void testGenerateAndValidateAccessToken() {
-        String token = jwtService.generateAccessToken(1L, "ADMIN");
+        String token = jwtService.generateAccessToken("1", "ADMIN");
         assertNotNull(token);
 
         Claims claims = jwtService.validateToken(token);
         assertNotNull(claims);
-        assertEquals(1L, jwtService.extractUserId(claims));
+        assertEquals("1", jwtService.extractUserId(claims));
         assertEquals("ADMIN", jwtService.extractRole(claims));
         assertEquals("access", jwtService.extractType(claims));
         assertNotNull(jwtService.extractJti(claims));
@@ -35,12 +35,12 @@ class JwtServiceTest {
 
     @Test
     void testGenerateAndValidateRefreshToken() {
-        String token = jwtService.generateRefreshToken(2L, "PATIENT");
+        String token = jwtService.generateRefreshToken("2", "PATIENT");
         assertNotNull(token);
 
         Claims claims = jwtService.validateToken(token);
         assertNotNull(claims);
-        assertEquals(2L, jwtService.extractUserId(claims));
+        assertEquals("2", jwtService.extractUserId(claims));
         assertEquals("PATIENT", jwtService.extractRole(claims));
         assertEquals("refresh", jwtService.extractType(claims));
     }
@@ -51,4 +51,3 @@ class JwtServiceTest {
         assertNull(claims);
     }
 }
-

@@ -55,7 +55,7 @@ public class MedicalRecordController {
     @GetMapping("/patient/{patient_id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<MedicalRecordResponse>> getPatientMedicalHistory(
-            @PathVariable("patient_id") Long patientId,
+            @PathVariable("patient_id") String patientId,
             @RequestParam(value = "skip", defaultValue = "0") int skip,
             @RequestParam(value = "limit", defaultValue = "50") int limit
     ) {
@@ -64,14 +64,14 @@ public class MedicalRecordController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<MedicalRecordResponse> getMedicalRecord(@PathVariable("id") Long id) {
+    public ResponseEntity<MedicalRecordResponse> getMedicalRecord(@PathVariable("id") String id) {
         return ResponseEntity.ok(medicalRecordService.getById(id));
     }
 
     @RequestMapping(value = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('DOCTOR') or hasAuthority('LAB_TECHNICIAN')")
     public ResponseEntity<MedicalRecordResponse> updateMedicalRecord(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @RequestBody MedicalRecordUpdateRequest req,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request

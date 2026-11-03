@@ -44,22 +44,22 @@ public class PrescriptionController {
     public ResponseEntity<List<PrescriptionResponse>> listPrescriptions(
             @RequestParam(value = "skip", defaultValue = "0") int skip,
             @RequestParam(value = "limit", defaultValue = "50") int limit,
-            @RequestParam(value = "patient_id", required = false) Long patientId,
-            @RequestParam(value = "doctor_id", required = false) Long doctorId
+            @RequestParam(value = "patient_id", required = false) String patientId,
+            @RequestParam(value = "doctor_id", required = false) String doctorId
     ) {
         return ResponseEntity.ok(prescriptionService.getMulti(skip, limit, patientId, doctorId));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<PrescriptionResponse> getPrescription(@PathVariable("id") Long id) {
+    public ResponseEntity<PrescriptionResponse> getPrescription(@PathVariable("id") String id) {
         return ResponseEntity.ok(prescriptionService.getById(id));
     }
 
     @RequestMapping(value = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('DOCTOR') or hasAuthority('PHARMACIST')")
     public ResponseEntity<PrescriptionResponse> updatePrescription(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @RequestBody PrescriptionUpdateRequest req,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request
@@ -71,7 +71,7 @@ public class PrescriptionController {
     @PostMapping("/{id}/items")
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('DOCTOR')")
     public ResponseEntity<PrescriptionItemResponse> addPrescriptionItem(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @Valid @RequestBody PrescriptionItemCreateRequest req,
             @AuthenticationPrincipal UserPrincipal principal
     ) {

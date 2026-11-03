@@ -12,9 +12,9 @@ import java.time.Instant;
 @NoArgsConstructor
 public class NotificationResponse {
 
-    private Long id;
+    private String id;
 
-    private Long userId;
+    private String userId;
 
     private String title;
 

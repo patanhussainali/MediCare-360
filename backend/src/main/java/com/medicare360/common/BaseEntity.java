@@ -1,32 +1,19 @@
 package com.medicare360.common;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.Instant;
 
-@MappedSuperclass
 @Getter
 @Setter
 public abstract class BaseEntity {
 
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME")
+    @CreatedDate
     private Instant createdAt;
 
-    @Column(name = "updated_at", nullable = false, columnDefinition = "DATETIME")
+    @LastModifiedDate
     private Instant updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = updatedAt = Instant.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = Instant.now();
-    }
 }

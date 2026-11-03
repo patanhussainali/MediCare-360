@@ -1,78 +1,55 @@
 package com.medicare360.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.medicare360.common.BaseEntity;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.util.List;
-
-@Entity
-@Table(name = "patients")
+@Document(collection = "patients")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Patient extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(name = "patient_id", unique = true, length = 50)
+    @Indexed(unique = true)
+    @Field("patient_id")
     private String patientId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Field("user_id")
+    private String userId;
 
-    @Column(name = "full_name", length = 255)
+    @Field("full_name")
     private String fullName;
 
-    @Column(length = 20)
     private String gender;
 
-    @Column(name = "date_of_birth", length = 50)
+    @Field("date_of_birth")
     private String dateOfBirth;
 
-    @Column(name = "blood_group", length = 10)
+    @Field("blood_group")
     private String bloodGroup;
 
-    @Column(length = 50)
     private String phone;
 
-    @Column(unique = true, length = 255)
+    @Indexed(unique = true, sparse = true)
     private String email;
 
-    @Column(columnDefinition = "TEXT")
     private String address;
 
-    @Column(name = "emergency_contact", length = 100)
+    @Field("emergency_contact")
     private String emergencyContact;
 
-    @Column(columnDefinition = "TEXT")
     private String allergies;
 
-    @Column(name = "chronic_conditions", columnDefinition = "TEXT")
+    @Field("chronic_conditions")
     private String chronicConditions;
 
-    @Column(length = 50)
     private String status = "Active";
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Appointment> appointments;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<MedicalRecord> medicalRecords;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Prescription> prescriptions;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Invoice> invoices;
 }

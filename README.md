@@ -25,24 +25,8 @@ MediCare-360 implements strict Role-Based Access Control (RBAC) across 6 dedicat
 
 **Requirements:** Java 21 JDK, Maven 3.9+
 
-# From project root
-powershell -ExecutionPolicy Bypass -File run-backend.ps1
-
-or
-
-run-backend.bat
-
-```
-
-manuall way
-mvn -DskipTests package
-mvn -DskipTests package ; java -jar target\medicare360-1.0.0.jar
-java -jar target\medicare360-1.0.0.jar
-
-mvn spring-boot:run
-mvn -DskipTests package
-
-```
+mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"
+````
 Backend API will be accessible at: `http://localhost:8080`  
 Health check endpoint: `http://localhost:8080/health`
 

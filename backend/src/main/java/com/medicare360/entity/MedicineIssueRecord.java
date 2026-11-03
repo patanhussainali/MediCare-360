@@ -1,44 +1,46 @@
 package com.medicare360.entity;
 
 import com.medicare360.common.BaseEntity;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.Instant;
 
-@Entity
-@Table(name = "medicine_issue_records")
+@Document(collection = "medicine_issue_records")
 @Getter
 @Setter
 @NoArgsConstructor
 public class MedicineIssueRecord extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prescription_id")
-    private Prescription prescription;
+    @Field("prescription_id")
+    private String prescriptionId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "medicine_id")
-    private Medicine medicine;
+    @Field("medicine_id")
+    private String medicineId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id")
-    private Patient patient;
+    @Field("medicine_name")
+    private String medicineName;
+
+    @Field("patient_id")
+    private String patientId;
+
+    @Field("patient_name")
+    private String patientName;
 
     private int quantity;
 
-    @Column(name = "dispensed_by", length = 255)
+    @Field("dispensed_by")
     private String dispensedBy;
 
-    @Column(name = "dispensed_at", columnDefinition = "DATETIME")
+    @Field("dispensed_at")
     private Instant dispensedAt;
 
-    @Column(columnDefinition = "TEXT")
     private String notes;
 }

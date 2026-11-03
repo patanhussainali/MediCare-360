@@ -9,9 +9,9 @@ import lombok.Setter;
 @NoArgsConstructor
 public class AppointmentCreateRequest {
 
-    private Long patientId;
+    private String patientId;
 
-    private Long doctorId;
+    private String doctorId;
 
     private String appointmentDate;
 
@@ -23,7 +23,7 @@ public class AppointmentCreateRequest {
 
     private String notes;
 
-    private Long departmentId;
+    private String departmentId;
 
     private String status;
 }

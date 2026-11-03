@@ -11,13 +11,13 @@ import java.util.List;
 @NoArgsConstructor
 public class PrescriptionCreateRequest {
 
-    private Long patientId;
+    private String patientId;
 
-    private Long doctorId;
+    private String doctorId;
 
     private String diagnosis;
 
-    private Long appointmentId;
+    private String appointmentId;
 
     private String instructions;
 

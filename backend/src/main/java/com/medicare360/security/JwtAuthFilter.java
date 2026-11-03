@@ -66,7 +66,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 return;
             }
 
-            Long userId = jwtService.extractUserId(claims);
+            String userId = jwtService.extractUserId(claims);
             Optional<User> userOpt = userRepository.findById(userId);
             if (userOpt.isEmpty()) {
                 filterChain.doFilter(request, response);

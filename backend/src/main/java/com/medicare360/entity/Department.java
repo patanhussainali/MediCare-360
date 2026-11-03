@@ -1,37 +1,36 @@
 package com.medicare360.entity;
 
 import com.medicare360.common.BaseEntity;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-@Entity
-@Table(name = "departments")
+@Document(collection = "departments")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Department extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(unique = true, length = 50)
+    @Indexed(unique = true)
     private String code;
 
-    @Column(unique = true, length = 255)
+    @Indexed(unique = true)
     private String name;
 
-    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "head_of_department", length = 255)
+    @Field("head_of_department")
     private String headOfDepartment;
 
-    @Column(length = 50)
     private String status = "Active";
 
-    @Column(name = "is_active")
+    @Field("is_active")
     private boolean isActive = true;
 }

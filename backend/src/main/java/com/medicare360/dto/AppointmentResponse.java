@@ -11,19 +11,19 @@ import java.time.Instant;
 @NoArgsConstructor
 public class AppointmentResponse {
 
-    private Long id;
+    private String id;
 
     private String appointmentNumber;
 
-    private Long patientId;
+    private String patientId;
 
     private String patientName;
 
-    private Long doctorId;
+    private String doctorId;
 
     private String doctorName;
 
-    private Long departmentId;
+    private String departmentId;
 
     private String departmentName;
 

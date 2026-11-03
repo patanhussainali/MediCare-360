@@ -9,13 +9,13 @@ import lombok.Setter;
 @NoArgsConstructor
 public class MedicineIssueCreateRequest {
 
-    private Long medicineId;
+    private String medicineId;
 
-    private Long patientId;
+    private String patientId;
 
     private int quantity;
 
-    private Long prescriptionId;
+    private String prescriptionId;
 
     private String notes;
 }

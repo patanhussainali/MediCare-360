@@ -11,15 +11,15 @@ import java.time.Instant;
 @NoArgsConstructor
 public class NurseResponse {
 
-    private Long id;
+    private String id;
 
     private String nurseId;
 
-    private Long userId;
+    private String userId;
 
     private String fullName;
 
-    private Long departmentId;
+    private String departmentId;
 
     private String shift;
 

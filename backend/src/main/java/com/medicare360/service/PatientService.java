@@ -16,7 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -33,12 +32,8 @@ public class PatientService {
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
 
-    public PatientService(
-            PatientRepository patientRepository,
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            AuditService auditService
-    ) {
+    public PatientService(PatientRepository patientRepository, UserRepository userRepository,
+                          PasswordEncoder passwordEncoder, AuditService auditService) {
         this.patientRepository = patientRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -51,7 +46,6 @@ public class PatientService {
         return "MRN-" + dateStr + "-" + randNum;
     }
 
-    @Transactional(readOnly = true)
     public List<PatientResponse> getMulti(int skip, int limit, String search) {
         int page = limit > 0 ? skip / limit : 0;
         int size = limit > 0 ? limit : 50;
@@ -66,15 +60,13 @@ public class PatientService {
         return patients.getContent().stream().map(this::toResponse).toList();
     }
 
-    @Transactional(readOnly = true)
-    public PatientResponse getById(Long id) {
+    public PatientResponse getById(String id) {
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
         return toResponse(patient);
     }
 
-    @Transactional
-    public PatientResponse getByUserId(Long userId) {
+    public PatientResponse getByUserId(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User account not found"));
         if (user.getRole() != UserRole.PATIENT) {
@@ -84,8 +76,8 @@ public class PatientService {
         Patient patient = patientRepository.findByUserId(userId).orElse(null);
         if (patient == null && user.getEmail() != null && !user.getEmail().isBlank()) {
             Patient matchingPatient = patientRepository.findByEmailIgnoreCase(user.getEmail()).orElse(null);
-            if (matchingPatient != null && matchingPatient.getUser() == null) {
-                matchingPatient.setUser(user);
+            if (matchingPatient != null && matchingPatient.getUserId() == null) {
+                matchingPatient.setUserId(userId);
                 patient = patientRepository.save(matchingPatient);
             }
         }
@@ -95,7 +87,6 @@ public class PatientService {
         return toResponse(patient);
     }
 
-    @Transactional
     public PatientResponse create(PatientCreateRequest req, User currentUser, String ipAddress, String userAgent) {
         String mrn = req.getMedicalRecordNumber();
         if (mrn == null || mrn.isBlank()) {
@@ -115,8 +106,7 @@ public class PatientService {
         }
 
         String password = req.getPassword() != null && !req.getPassword().isBlank()
-                ? req.getPassword()
-                : UUID.randomUUID().toString().substring(0, 12);
+                ? req.getPassword() : UUID.randomUUID().toString().substring(0, 12);
 
         User user = new User();
         user.setEmail(cleanEmail);
@@ -130,7 +120,7 @@ public class PatientService {
 
         Patient patient = new Patient();
         patient.setPatientId(mrn);
-        patient.setUser(user);
+        patient.setUserId(user.getId());
         patient.setFullName(req.getFullName());
         patient.setGender(req.getGender());
         patient.setDateOfBirth(req.getDateOfBirth());
@@ -142,24 +132,17 @@ public class PatientService {
         patient.setAllergies(req.getAllergies());
         patient.setChronicConditions(req.getChronicConditions());
         patient.setStatus(req.getStatus() != null ? req.getStatus() : "Active");
-
         patient = patientRepository.save(patient);
 
-        auditService.logAction(
-                "PATIENT_CREATED",
-                "Patient",
-                currentUser != null ? currentUser : user,
-                patient.getId().toString(),
+        auditService.logAction("PATIENT_CREATED", "Patient",
+                currentUser != null ? currentUser : user, patient.getId(),
                 Map.of("mrn", patient.getPatientId(), "name", patient.getFullName()),
-                ipAddress,
-                userAgent
-        );
+                ipAddress, userAgent);
 
         return toResponse(patient);
     }
 
-    @Transactional
-    public PatientResponse update(Long id, PatientUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
+    public PatientResponse update(String id, PatientUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
 
@@ -171,47 +154,27 @@ public class PatientService {
         if (req.getChronicConditions() != null) patient.setChronicConditions(req.getChronicConditions());
         if (req.getBloodGroup() != null) patient.setBloodGroup(req.getBloodGroup());
         if (req.getStatus() != null) patient.setStatus(req.getStatus());
-
         patient = patientRepository.save(patient);
 
-        auditService.logAction(
-                "PATIENT_UPDATED",
-                "Patient",
-                currentUser,
-                patient.getId().toString(),
-                Map.of("id", patient.getId()),
-                ipAddress,
-                userAgent
-        );
+        auditService.logAction("PATIENT_UPDATED", "Patient", currentUser, patient.getId(),
+                Map.of("id", patient.getId()), ipAddress, userAgent);
 
         return toResponse(patient);
     }
 
-    @Transactional
-    public void delete(Long id, User currentUser, String ipAddress, String userAgent) {
+    public void delete(String id, User currentUser, String ipAddress, String userAgent) {
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
-
         patientRepository.delete(patient);
-
-        auditService.logAction(
-                "PATIENT_DELETED",
-                "Patient",
-                currentUser,
-                id.toString(),
-                Map.of("mrn", patient.getPatientId()),
-                ipAddress,
-                userAgent
-        );
+        auditService.logAction("PATIENT_DELETED", "Patient", currentUser, id,
+                Map.of("mrn", patient.getPatientId()), ipAddress, userAgent);
     }
 
     public PatientResponse toResponse(Patient p) {
         PatientResponse res = new PatientResponse();
         res.setId(p.getId());
         res.setPatientId(p.getPatientId());
-        if (p.getUser() != null) {
-            res.setUserId(p.getUser().getId());
-        }
+        res.setUserId(p.getUserId());
         res.setFullName(p.getFullName());
         res.setGender(p.getGender());
         res.setDateOfBirth(p.getDateOfBirth());
@@ -228,4 +191,3 @@ public class PatientService {
         return res;
     }
 }
-

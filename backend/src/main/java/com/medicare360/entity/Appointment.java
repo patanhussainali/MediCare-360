@@ -1,53 +1,56 @@
 package com.medicare360.entity;
 
 import com.medicare360.common.BaseEntity;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-@Entity
-@Table(name = "appointments")
+@Document(collection = "appointments")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Appointment extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(name = "appointment_number", unique = true, length = 50)
+    @Indexed(unique = true)
+    @Field("appointment_number")
     private String appointmentNumber;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id")
-    private Patient patient;
+    @Field("patient_id")
+    private String patientId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "doctor_id")
-    private Doctor doctor;
+    @Field("patient_name")
+    private String patientName;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id")
-    private Department department;
+    @Field("doctor_id")
+    private String doctorId;
 
-    @Column(name = "appointment_date", length = 50)
+    @Field("doctor_name")
+    private String doctorName;
+
+    @Field("department_id")
+    private String departmentId;
+
+    @Field("department_name")
+    private String departmentName;
+
+    @Field("appointment_date")
     private String appointmentDate;
 
-    @Column(name = "appointment_time", length = 20)
+    @Field("appointment_time")
     private String appointmentTime;
 
-    @Column(length = 50)
     private String type = "General Consultation";
 
-    @Column(columnDefinition = "TEXT")
     private String reason;
 
-    @Convert(converter = AppointmentStatusConverter.class)
-    @Column(length = 20)
     private AppointmentStatus status;
 
-    @Column(columnDefinition = "TEXT")
     private String notes;
 }

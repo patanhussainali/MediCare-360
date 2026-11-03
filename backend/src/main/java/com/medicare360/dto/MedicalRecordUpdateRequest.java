@@ -9,9 +9,9 @@ import lombok.Setter;
 @NoArgsConstructor
 public class MedicalRecordUpdateRequest {
 
-    private Long patientId;
+    private String patientId;
 
-    private Long doctorId;
+    private String doctorId;
 
     private String diagnosis;
 

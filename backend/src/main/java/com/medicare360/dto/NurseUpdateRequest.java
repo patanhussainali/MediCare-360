@@ -15,7 +15,7 @@ public class NurseUpdateRequest {
 
     private String status;
 
-    private Long departmentId;
+    private String departmentId;
 
     @Pattern(regexp = PhoneNumberValidator.PATTERN, message = PhoneNumberValidator.MESSAGE)
     private String phone;

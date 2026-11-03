@@ -7,7 +7,6 @@ import com.medicare360.entity.Medicine;
 import com.medicare360.entity.Patient;
 import com.medicare360.repository.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -26,13 +25,9 @@ public class ReportService {
     private final MedicineRepository medicineRepository;
     private final MedicineIssueRecordRepository medicineIssueRecordRepository;
 
-    public ReportService(
-            PatientRepository patientRepository,
-            AppointmentRepository appointmentRepository,
-            InvoiceRepository invoiceRepository,
-            MedicineRepository medicineRepository,
-            MedicineIssueRecordRepository medicineIssueRecordRepository
-    ) {
+    public ReportService(PatientRepository patientRepository, AppointmentRepository appointmentRepository,
+                         InvoiceRepository invoiceRepository, MedicineRepository medicineRepository,
+                         MedicineIssueRecordRepository medicineIssueRecordRepository) {
         this.patientRepository = patientRepository;
         this.appointmentRepository = appointmentRepository;
         this.invoiceRepository = invoiceRepository;
@@ -40,14 +35,12 @@ public class ReportService {
         this.medicineIssueRecordRepository = medicineIssueRecordRepository;
     }
 
-    @Transactional(readOnly = true)
     public PatientStatsResponse getPatientStats() {
         List<Patient> patients = patientRepository.findAll();
         long total = patients.size();
 
         Map<String, Long> genderDist = patients.stream()
                 .collect(Collectors.groupingBy(p -> p.getGender() != null ? p.getGender() : "Unknown", Collectors.counting()));
-
         Map<String, Long> bgDist = patients.stream()
                 .collect(Collectors.groupingBy(p -> p.getBloodGroup() != null ? p.getBloodGroup() : "Unknown", Collectors.counting()));
 
@@ -59,7 +52,6 @@ public class ReportService {
         return new PatientStatsResponse(total, genderDist, bgDist, newPatients);
     }
 
-    @Transactional(readOnly = true)
     public AppointmentStatsResponse getAppointmentStats() {
         List<Appointment> appointments = appointmentRepository.findAll();
         long total = appointments.size();
@@ -71,7 +63,6 @@ public class ReportService {
         long todayCount = appointments.stream()
                 .filter(a -> today.equals(a.getAppointmentDate()))
                 .count();
-
         long upcomingCount = appointments.stream()
                 .filter(a -> a.getAppointmentDate() != null && a.getAppointmentDate().compareTo(today) > 0)
                 .count();
@@ -79,7 +70,6 @@ public class ReportService {
         return new AppointmentStatsResponse(total, byStatus, todayCount, upcomingCount);
     }
 
-    @Transactional(readOnly = true)
     public BillingStatsResponse getBillingStats() {
         List<Invoice> invoices = invoiceRepository.findAll();
         long count = invoices.size();
@@ -98,32 +88,22 @@ public class ReportService {
         return new BillingStatsResponse(totalInvoiced, totalPaid, totalPending, byStatus, count);
     }
 
-    @Transactional(readOnly = true)
     public PharmacyStatsResponse getPharmacyStats() {
         List<Medicine> medicines = medicineRepository.findAll();
         long total = medicines.size();
         long lowStock = medicines.stream()
                 .filter(m -> m.getStockQuantity() <= m.getMinStockThreshold() && m.getStockQuantity() > 0)
                 .count();
-        long outOfStock = medicines.stream()
-                .filter(m -> m.getStockQuantity() == 0)
-                .count();
+        long outOfStock = medicines.stream().filter(m -> m.getStockQuantity() == 0).count();
 
         long totalDispensed = medicineIssueRecordRepository.findAll().stream()
-                .mapToLong(r -> r.getQuantity())
-                .sum();
+                .mapToLong(r -> r.getQuantity()).sum();
 
         return new PharmacyStatsResponse(total, lowStock, outOfStock, totalDispensed);
     }
 
-    @Transactional(readOnly = true)
     public DashboardStatsResponse getDashboardStats() {
         return new DashboardStatsResponse(
-                getPatientStats(),
-                getAppointmentStats(),
-                getBillingStats(),
-                getPharmacyStats()
-        );
+                getPatientStats(), getAppointmentStats(), getBillingStats(), getPharmacyStats());
     }
 }
-

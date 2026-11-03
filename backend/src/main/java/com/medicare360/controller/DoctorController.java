@@ -46,7 +46,7 @@ public class DoctorController {
     public ResponseEntity<List<DoctorResponse>> listDoctors(
             @RequestParam(value = "skip", defaultValue = "0") int skip,
             @RequestParam(value = "limit", defaultValue = "50") int limit,
-            @RequestParam(value = "department_id", required = false) Long departmentId,
+            @RequestParam(value = "department_id", required = false) String departmentId,
             @RequestParam(value = "is_available", required = false) Boolean isAvailable
     ) {
         return ResponseEntity.ok(doctorService.getMulti(skip, limit, departmentId, isAvailable));
@@ -54,14 +54,14 @@ public class DoctorController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<DoctorResponse> getDoctor(@PathVariable("id") Long id) {
+    public ResponseEntity<DoctorResponse> getDoctor(@PathVariable("id") String id) {
         return ResponseEntity.ok(doctorService.getById(id));
     }
 
     @RequestMapping(value = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<DoctorResponse> updateDoctor(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @Valid @RequestBody DoctorUpdateRequest req,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request

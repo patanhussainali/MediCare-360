@@ -47,8 +47,8 @@ public class AppointmentController {
     public ResponseEntity<List<AppointmentResponse>> listAppointments(
             @RequestParam(value = "skip", defaultValue = "0") int skip,
             @RequestParam(value = "limit", defaultValue = "50") int limit,
-            @RequestParam(value = "patient_id", required = false) Long patientId,
-            @RequestParam(value = "doctor_id", required = false) Long doctorId,
+            @RequestParam(value = "patient_id", required = false) String patientId,
+            @RequestParam(value = "doctor_id", required = false) String doctorId,
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "appointment_date", required = false) String appointmentDate
     ) {
@@ -57,14 +57,14 @@ public class AppointmentController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<AppointmentResponse> getAppointment(@PathVariable("id") Long id) {
+    public ResponseEntity<AppointmentResponse> getAppointment(@PathVariable("id") String id) {
         return ResponseEntity.ok(appointmentService.getById(id));
     }
 
     @RequestMapping(value = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('RECEPTIONIST') or hasAuthority('DOCTOR')")
     public ResponseEntity<AppointmentResponse> updateAppointment(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @RequestBody AppointmentUpdateRequest req,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request
@@ -76,7 +76,7 @@ public class AppointmentController {
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('RECEPTIONIST') or hasAuthority('DOCTOR') or hasAuthority('NURSE')")
     public ResponseEntity<AppointmentResponse> updateAppointmentStatus(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @Valid @RequestBody AppointmentStatusUpdateRequest req,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request
@@ -88,7 +88,7 @@ public class AppointmentController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('RECEPTIONIST')")
     public ResponseEntity<Void> deleteAppointment(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request
     ) {

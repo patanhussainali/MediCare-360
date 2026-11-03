@@ -28,13 +28,13 @@ public class JwtService {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateAccessToken(Long userId, String role) {
+    public String generateAccessToken(String userId, String role) {
         Instant now = Instant.now();
         Instant exp = now.plusSeconds((long) accessExpiryMinutes * 60);
         String jti = UUID.randomUUID().toString().replace("-", "");
 
         return Jwts.builder()
-                .subject(userId.toString())
+                .subject(userId)
                 .claim("role", role)
                 .claim("type", "access")
                 .id(jti)
@@ -44,13 +44,13 @@ public class JwtService {
                 .compact();
     }
 
-    public String generateRefreshToken(Long userId, String role) {
+    public String generateRefreshToken(String userId, String role) {
         Instant now = Instant.now();
         Instant exp = now.plusSeconds((long) refreshExpiryDays * 24L * 60 * 60);
         String jti = UUID.randomUUID().toString().replace("-", "");
 
         return Jwts.builder()
-                .subject(userId.toString())
+                .subject(userId)
                 .claim("role", role)
                 .claim("type", "refresh")
                 .id(jti)
@@ -61,8 +61,7 @@ public class JwtService {
     }
 
     /**
-     * Parse and validate a JWT. Returns the Claims payload on success, or null on any error
-     * (expired, tampered, malformed, etc.).
+     * Parse and validate a JWT. Returns the Claims payload on success, or null on any error.
      */
     public Claims validateToken(String token) {
         try {
@@ -76,8 +75,8 @@ public class JwtService {
         }
     }
 
-    public Long extractUserId(Claims claims) {
-        return Long.parseLong(claims.getSubject());
+    public String extractUserId(Claims claims) {
+        return claims.getSubject();
     }
 
     public String extractRole(Claims claims) {
@@ -88,10 +87,6 @@ public class JwtService {
         return claims.get("type", String.class);
     }
 
-    /**
-     * Extract the JTI. jjwt 0.12.x stores the registered "jti" claim via {@code claims.getId()};
-     * fall back to reading the raw claim key in case of custom serialisation.
-     */
     public String extractJti(Claims claims) {
         String jti = claims.getId();
         if (jti == null) {

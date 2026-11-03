@@ -2,7 +2,6 @@ package com.medicare360;
 
 import com.medicare360.dto.DepartmentCreateRequest;
 import com.medicare360.dto.DepartmentResponse;
-import com.medicare360.dto.DepartmentUpdateRequest;
 import com.medicare360.entity.Department;
 import com.medicare360.entity.User;
 import com.medicare360.exception.BadRequestException;
@@ -40,7 +39,7 @@ class DepartmentServiceTest {
     @BeforeEach
     void setUp() {
         cardiology = new Department();
-        cardiology.setId(1L);
+        cardiology.setId("dept-1");
         cardiology.setName("Cardiology");
         cardiology.setCode("CARDIO");
         cardiology.setActive(true);
@@ -58,18 +57,18 @@ class DepartmentServiceTest {
 
     @Test
     void testGetById_Found() {
-        when(departmentRepository.findById(1L)).thenReturn(Optional.of(cardiology));
+        when(departmentRepository.findById("dept-1")).thenReturn(Optional.of(cardiology));
 
-        DepartmentResponse res = departmentService.getById(1L);
+        DepartmentResponse res = departmentService.getById("dept-1");
         assertNotNull(res);
         assertEquals("CARDIO", res.getCode());
     }
 
     @Test
     void testGetById_NotFound() {
-        when(departmentRepository.findById(99L)).thenReturn(Optional.empty());
+        when(departmentRepository.findById("dept-99")).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> departmentService.getById(99L));
+        assertThrows(ResourceNotFoundException.class, () -> departmentService.getById("dept-99"));
     }
 
     @Test
@@ -77,7 +76,7 @@ class DepartmentServiceTest {
         when(departmentRepository.findAll()).thenReturn(List.of());
         when(departmentRepository.save(any(Department.class))).thenAnswer(inv -> {
             Department d = inv.getArgument(0);
-            d.setId(2L);
+            d.setId("dept-2");
             return d;
         });
 
@@ -101,4 +100,3 @@ class DepartmentServiceTest {
         assertThrows(BadRequestException.class, () -> departmentService.create(req, new User(), "127.0.0.1", "Mozilla"));
     }
 }
-

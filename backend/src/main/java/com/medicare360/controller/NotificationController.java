@@ -31,7 +31,7 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.getUserNotifications(principal.getUserId(), skip, limit));
     }
 
-    // Must be declared BEFORE /{id}/read so 'read-all' is not parsed as Long
+    // Must be declared BEFORE /{id}/read so 'read-all' is not parsed as String
     @PatchMapping("/read-all")
     public ResponseEntity<Map<String, Object>> markAllNotificationsRead(
             @AuthenticationPrincipal UserPrincipal principal
@@ -41,7 +41,7 @@ public class NotificationController {
 
     @PatchMapping("/{id}/read")
     public ResponseEntity<NotificationResponse> markNotificationRead(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         return ResponseEntity.ok(notificationService.markAsRead(id, principal.getUserId()));

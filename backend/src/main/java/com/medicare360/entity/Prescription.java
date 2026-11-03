@@ -1,49 +1,51 @@
 package com.medicare360.entity;
 
 import com.medicare360.common.BaseEntity;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "prescriptions")
+@Document(collection = "prescriptions")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Prescription extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(name = "prescription_number", unique = true, length = 50)
+    @Indexed(unique = true)
+    @Field("prescription_number")
     private String prescriptionNumber;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id")
-    private Patient patient;
+    @Field("patient_id")
+    private String patientId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "doctor_id")
-    private Doctor doctor;
+    @Field("patient_name")
+    private String patientName;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "appointment_id")
-    private Appointment appointment;
+    @Field("doctor_id")
+    private String doctorId;
 
-    @Column(length = 255)
+    @Field("doctor_name")
+    private String doctorName;
+
+    @Field("appointment_id")
+    private String appointmentId;
+
     private String diagnosis;
 
-    @Column(columnDefinition = "TEXT")
     private String instructions;
 
-    @Column(length = 50)
     private String status = "Active";
 
-    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    /** Embedded prescription items — no separate collection needed */
     private List<PrescriptionItem> items = new ArrayList<>();
 }

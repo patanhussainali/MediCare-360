@@ -1,47 +1,43 @@
 package com.medicare360.entity;
 
 import com.medicare360.common.BaseEntity;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-@Entity
-@Table(name = "audit_logs")
+@Document(collection = "audit_logs")
 @Getter
 @Setter
 @NoArgsConstructor
 public class AuditLog extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Field("user_id")
+    private String userId;
 
-    @Column(name = "user_email", length = 255)
+    @Field("user_email")
     private String userEmail;
 
-    @Column(name = "user_name", length = 255)
+    @Field("user_name")
     private String userName = "System";
 
-    @Column(length = 100)
     private String action;
 
-    @Column(length = 100)
     private String resource;
 
-    @Column(name = "resource_id", length = 100)
+    @Field("resource_id")
     private String resourceId;
 
-    @Column(columnDefinition = "TEXT")
     private String details;
 
-    @Column(name = "ip_address", length = 50)
+    @Field("ip_address")
     private String ipAddress;
 
-    @Column(name = "user_agent", length = 500)
+    @Field("user_agent")
     private String userAgent;
 }

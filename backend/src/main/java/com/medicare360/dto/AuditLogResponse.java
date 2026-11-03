@@ -11,9 +11,9 @@ import java.time.Instant;
 @NoArgsConstructor
 public class AuditLogResponse {
 
-    private Long id;
+    private String id;
 
-    private Long userId;
+    private String userId;
 
     private String userEmail;
 

@@ -1,48 +1,54 @@
 package com.medicare360.entity;
 
 import com.medicare360.common.BaseEntity;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-@Entity
-@Table(name = "medical_records")
+@Document(collection = "medical_records")
 @Getter
 @Setter
 @NoArgsConstructor
 public class MedicalRecord extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(name = "record_number", unique = true, length = 50)
+    @Indexed(unique = true)
+    @Field("record_number")
     private String recordNumber;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id")
-    private Patient patient;
+    @Field("patient_id")
+    private String patientId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "doctor_id")
-    private Doctor doctor;
+    @Field("patient_name")
+    private String patientName;
 
-    @Column(length = 255)
+    @Field("patient_code")
+    private String patientCode;
+
+    @Field("doctor_id")
+    private String doctorId;
+
+    @Field("doctor_name")
+    private String doctorName;
+
     private String diagnosis;
 
-    @Column(columnDefinition = "TEXT")
     private String symptoms;
 
-    @Column(name = "examination_notes", columnDefinition = "TEXT")
+    @Field("examination_notes")
     private String examinationNotes;
 
-    @Column(name = "vital_signs", columnDefinition = "TEXT")
+    @Field("vital_signs")
     private String vitalSigns;
 
-    @Column(columnDefinition = "TEXT")
     private String attachments;
 
-    @Column(name = "visit_date", length = 50)
+    @Field("visit_date")
     private String visitDate;
 }

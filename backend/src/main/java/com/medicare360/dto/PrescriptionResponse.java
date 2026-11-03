@@ -12,19 +12,19 @@ import java.util.List;
 @NoArgsConstructor
 public class PrescriptionResponse {
 
-    private Long id;
+    private String id;
 
     private String prescriptionNumber;
 
-    private Long patientId;
+    private String patientId;
 
     private String patientName;
 
-    private Long doctorId;
+    private String doctorId;
 
     private String doctorName;
 
-    private Long appointmentId;
+    private String appointmentId;
 
     private String diagnosis;
 

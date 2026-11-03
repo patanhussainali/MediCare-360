@@ -64,14 +64,14 @@ public class UserController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<UserResponse> getUser(@PathVariable("id") Long id) {
+    public ResponseEntity<UserResponse> getUser(@PathVariable("id") String id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<UserResponse> updateUser(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @Valid @RequestBody UserUpdateRequest req,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request
@@ -85,7 +85,7 @@ public class UserController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> deleteUser(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request
     ) {

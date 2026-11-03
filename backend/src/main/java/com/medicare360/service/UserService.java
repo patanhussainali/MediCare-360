@@ -9,18 +9,12 @@ import com.medicare360.entity.UserRole;
 import com.medicare360.exception.BadRequestException;
 import com.medicare360.exception.ForbiddenException;
 import com.medicare360.exception.ResourceNotFoundException;
-import com.medicare360.repository.DoctorRepository;
-import com.medicare360.repository.NurseRepository;
-import com.medicare360.repository.PatientRepository;
-import com.medicare360.repository.PharmacistRepository;
-import com.medicare360.repository.ReceptionistRepository;
-import com.medicare360.repository.UserRepository;
+import com.medicare360.repository.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -38,8 +32,8 @@ public class UserService {
     private final ReceptionistRepository receptionistRepository;
     private final PharmacistRepository pharmacistRepository;
 
-    public UserService(UserRepository userRepository, AuthService authService, PasswordEncoder passwordEncoder, AuditService auditService,
-                       DoctorRepository doctorRepository, PatientRepository patientRepository,
+    public UserService(UserRepository userRepository, AuthService authService, PasswordEncoder passwordEncoder,
+                       AuditService auditService, DoctorRepository doctorRepository, PatientRepository patientRepository,
                        NurseRepository nurseRepository, ReceptionistRepository receptionistRepository,
                        PharmacistRepository pharmacistRepository) {
         this.userRepository = userRepository;
@@ -53,7 +47,6 @@ public class UserService {
         this.pharmacistRepository = pharmacistRepository;
     }
 
-    @Transactional
     public UserResponse createUser(UserCreateRequest req, User currentUser, String ipAddress, String userAgent) {
         UserRole role = UserRole.PATIENT;
         if (req.getRole() != null && !req.getRole().isBlank()) {
@@ -64,10 +57,9 @@ public class UserService {
             }
         }
 
-        // Validate role + assignment
         if (role == UserRole.PATIENT) {
-            if (req.getDepartment() != null && !req.getDepartment().isBlank() &&
-                !req.getDepartment().equalsIgnoreCase("N/A") && !req.getDepartment().equalsIgnoreCase("None")) {
+            if (req.getDepartment() != null && !req.getDepartment().isBlank()
+                    && !req.getDepartment().equalsIgnoreCase("N/A") && !req.getDepartment().equalsIgnoreCase("None")) {
                 throw new BadRequestException("Patients cannot be assigned to hospital staff departments.");
             }
         } else {
@@ -75,16 +67,16 @@ public class UserService {
                 throw new BadRequestException("Assigned department/designation is required for " + role.name() + ".");
             }
             if (!RoleAssignments.isValidAssignment(role, req.getDepartment())) {
-                throw new BadRequestException("Invalid department/designation '" + req.getDepartment() + "' for role " + role.name() +
-                    ". Valid options: " + String.join(", ", RoleAssignments.getAssignmentsForRole(role)));
+                throw new BadRequestException("Invalid department/designation '" + req.getDepartment() + "' for role " + role.name()
+                        + ". Valid options: " + String.join(", ", RoleAssignments.getAssignmentsForRole(role)));
             }
         }
 
-        User created = authService.registerUser(req.getEmail(), req.getPassword(), req.getFullName(), role, req.getPhoneNumber(), req.getDepartment(), ipAddress, userAgent);
+        User created = authService.registerUser(req.getEmail(), req.getPassword(), req.getFullName(),
+                role, req.getPhoneNumber(), req.getDepartment(), ipAddress, userAgent);
         return authService.toUserResponse(created);
     }
 
-    @Transactional(readOnly = true)
     public List<UserResponse> listUsers(int skip, int limit, String roleStr) {
         int page = limit > 0 ? skip / limit : 0;
         int size = limit > 0 ? limit : 100;
@@ -92,9 +84,7 @@ public class UserService {
 
         UserRole role = null;
         if (roleStr != null && !roleStr.isBlank()) {
-            try {
-                role = UserRole.valueOf(roleStr.toUpperCase());
-            } catch (Exception ignored) {}
+            try { role = UserRole.valueOf(roleStr.toUpperCase()); } catch (Exception ignored) {}
         }
 
         Page<User> users = userRepository.findAll(pageable);
@@ -105,15 +95,13 @@ public class UserService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public UserResponse getUserById(Long id) {
+    public UserResponse getUserById(String id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return authService.toUserResponse(user);
     }
 
-    @Transactional
-    public UserResponse updateUser(Long id, UserUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
+    public UserResponse updateUser(String id, UserUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -150,45 +138,31 @@ public class UserService {
                 user.setDepartment(null);
             } else {
                 if (!dept.isBlank() && !RoleAssignments.isValidAssignment(targetRole, dept)) {
-                    throw new BadRequestException("Invalid department/designation '" + dept + "' for role " + targetRole.name() +
-                        ". Valid options: " + String.join(", ", RoleAssignments.getAssignmentsForRole(targetRole)));
+                    throw new BadRequestException("Invalid department/designation '" + dept + "' for role " + targetRole.name()
+                            + ". Valid options: " + String.join(", ", RoleAssignments.getAssignmentsForRole(targetRole)));
                 }
                 user.setDepartment(dept.isBlank() ? null : dept);
             }
         }
 
         if (req.getPassword() != null) {
-            if (req.getPassword().length() < 6) {
-                throw new BadRequestException("Password must be at least 6 characters long.");
-            }
+            if (req.getPassword().length() < 6) throw new BadRequestException("Password must be at least 6 characters long.");
             user.setHashedPassword(passwordEncoder.encode(req.getPassword()));
         }
 
         user = userRepository.save(user);
-
-        auditService.logAction(
-                "USER_UPDATED",
-                "User",
-                currentUser,
-                user.getId().toString(),
-                Map.of("updated_user_id", user.getId()),
-                ipAddress,
-                userAgent
-        );
-
+        auditService.logAction("USER_UPDATED", "User", currentUser, user.getId(),
+                Map.of("updated_user_id", user.getId()), ipAddress, userAgent);
         return authService.toUserResponse(user);
     }
 
-    @Transactional
-    public void deleteUser(Long id, User currentUser, String ipAddress, String userAgent) {
+    public void deleteUser(String id, User currentUser, String ipAddress, String userAgent) {
         if (id.equals(currentUser.getId())) {
             throw new BadRequestException("You cannot delete your own active administrator account.");
         }
-
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // Delete any linked profile records so no orphan profiles remain
         doctorRepository.findByUserId(id).ifPresent(doctorRepository::delete);
         patientRepository.findByUserId(id).ifPresent(patientRepository::delete);
         nurseRepository.findByUserId(id).ifPresent(nurseRepository::delete);
@@ -196,16 +170,7 @@ public class UserService {
         pharmacistRepository.findByUserId(id).ifPresent(pharmacistRepository::delete);
 
         userRepository.delete(user);
-
-        auditService.logAction(
-                "USER_DELETED",
-                "User",
-                currentUser,
-                id.toString(),
-                Map.of("deleted_user_email", user.getEmail()),
-                ipAddress,
-                userAgent
-        );
+        auditService.logAction("USER_DELETED", "User", currentUser, id,
+                Map.of("deleted_user_email", user.getEmail()), ipAddress, userAgent);
     }
 }
-

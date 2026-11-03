@@ -13,7 +13,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -28,13 +27,11 @@ public class PharmacyService {
     private final PrescriptionRepository prescriptionRepository;
     private final AuditService auditService;
 
-    public PharmacyService(
-            MedicineRepository medicineRepository,
-            MedicineIssueRecordRepository medicineIssueRecordRepository,
-            PatientRepository patientRepository,
-            PrescriptionRepository prescriptionRepository,
-            AuditService auditService
-    ) {
+    public PharmacyService(MedicineRepository medicineRepository,
+                           MedicineIssueRecordRepository medicineIssueRecordRepository,
+                           PatientRepository patientRepository,
+                           PrescriptionRepository prescriptionRepository,
+                           AuditService auditService) {
         this.medicineRepository = medicineRepository;
         this.medicineIssueRecordRepository = medicineIssueRecordRepository;
         this.patientRepository = patientRepository;
@@ -42,7 +39,6 @@ public class PharmacyService {
         this.auditService = auditService;
     }
 
-    @Transactional(readOnly = true)
     public List<MedicineResponse> getMedicines(int skip, int limit, String search, String category) {
         int page = limit > 0 ? skip / limit : 0;
         int size = limit > 0 ? limit : 50;
@@ -59,7 +55,6 @@ public class PharmacyService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public List<MedicineResponse> getLowStockMedicines() {
         return medicineRepository.findAll().stream()
                 .filter(m -> m.getStockQuantity() <= m.getMinStockThreshold())
@@ -67,25 +62,21 @@ public class PharmacyService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public MedicineResponse getMedicineById(Long id) {
+    public MedicineResponse getMedicineById(String id) {
         Medicine m = medicineRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
         return toResponse(m);
     }
 
-    @Transactional
     public MedicineResponse createMedicine(MedicineCreateRequest req, User currentUser, String ipAddress, String userAgent) {
-        boolean exists = medicineRepository.findByName(req.getName()).isPresent();
-        if (exists) {
+        if (medicineRepository.findByName(req.getName()).isPresent()) {
             throw new BadRequestException("Medicine '" + req.getName() + "' already exists.");
         }
 
         Medicine m = new Medicine();
-        // Auto-generate code if not provided (prevents NOT NULL constraint failure)
         String code = (req.getCode() != null && !req.getCode().isBlank())
-            ? req.getCode()
-            : "MED-" + java.util.UUID.randomUUID().toString().replace("-","").substring(0,6).toUpperCase();
+                ? req.getCode()
+                : "MED-" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
         m.setCode(code);
         m.setName(req.getName());
         m.setGenericName(req.getGenericName());
@@ -98,22 +89,12 @@ public class PharmacyService {
         m.setStatus(m.getStockQuantity() > 0 ? "Available" : "Out of Stock");
 
         m = medicineRepository.save(m);
-
-        auditService.logAction(
-                "MEDICINE_CREATED",
-                "Medicine",
-                currentUser,
-                m.getId().toString(),
-                Map.of("name", m.getName(), "stock", m.getStockQuantity()),
-                ipAddress,
-                userAgent
-        );
-
+        auditService.logAction("MEDICINE_CREATED", "Medicine", currentUser, m.getId(),
+                Map.of("name", m.getName(), "stock", m.getStockQuantity()), ipAddress, userAgent);
         return toResponse(m);
     }
 
-    @Transactional
-    public MedicineResponse updateMedicine(Long id, MedicineUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
+    public MedicineResponse updateMedicine(String id, MedicineUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
         Medicine m = medicineRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
 
@@ -132,22 +113,12 @@ public class PharmacyService {
         if (req.getStatus() != null) m.setStatus(req.getStatus());
 
         m = medicineRepository.save(m);
-
-        auditService.logAction(
-                "MEDICINE_UPDATED",
-                "Medicine",
-                currentUser,
-                m.getId().toString(),
-                Map.of("id", m.getId()),
-                ipAddress,
-                userAgent
-        );
-
+        auditService.logAction("MEDICINE_UPDATED", "Medicine", currentUser, m.getId(),
+                Map.of("id", m.getId()), ipAddress, userAgent);
         return toResponse(m);
     }
 
-    @Transactional
-    public MedicineResponse updateStock(Long id, int quantityDelta, User currentUser, String ipAddress, String userAgent) {
+    public MedicineResponse updateStock(String id, int quantityDelta, User currentUser, String ipAddress, String userAgent) {
         Medicine m = medicineRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
 
@@ -155,29 +126,18 @@ public class PharmacyService {
         if (newStock < 0) {
             throw new BadRequestException("Insufficient stock for '" + m.getName() + "'. Available: " + m.getStockQuantity() + ", requested change: " + quantityDelta);
         }
-
         m.setStockQuantity(newStock);
         m.setStatus(newStock > 0 ? "Available" : "Out of Stock");
         m = medicineRepository.save(m);
 
-        auditService.logAction(
-                "MEDICINE_STOCK_UPDATED",
-                "Medicine",
-                currentUser,
-                m.getId().toString(),
-                Map.of("delta", quantityDelta, "new_stock", m.getStockQuantity()),
-                ipAddress,
-                userAgent
-        );
-
+        auditService.logAction("MEDICINE_STOCK_UPDATED", "Medicine", currentUser, m.getId(),
+                Map.of("delta", quantityDelta, "new_stock", m.getStockQuantity()), ipAddress, userAgent);
         return toResponse(m);
     }
 
-    @Transactional
     public MedicineIssueResponse issueMedicine(MedicineIssueCreateRequest req, User currentUser, String ipAddress, String userAgent) {
         Medicine m = medicineRepository.findById(req.getMedicineId())
                 .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
-
         Patient p = patientRepository.findById(req.getPatientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
 
@@ -189,43 +149,33 @@ public class PharmacyService {
         m.setStatus(m.getStockQuantity() > 0 ? "Available" : "Out of Stock");
         medicineRepository.save(m);
 
-        Prescription presc = null;
-        if (req.getPrescriptionId() != null) {
-            presc = prescriptionRepository.findById(req.getPrescriptionId()).orElse(null);
+        MedicineIssueRecord record = new MedicineIssueRecord();
+        record.setMedicineId(m.getId());
+        record.setMedicineName(m.getName());
+        record.setPatientId(p.getId());
+        record.setPatientName(p.getFullName());
+
+        if (req.getPrescriptionId() != null && !req.getPrescriptionId().isBlank()) {
+            prescriptionRepository.findById(req.getPrescriptionId())
+                    .ifPresent(presc -> record.setPrescriptionId(presc.getId()));
         }
 
-        MedicineIssueRecord record = new MedicineIssueRecord();
-        record.setMedicine(m);
-        record.setPatient(p);
-        record.setPrescription(presc);
         record.setQuantity(req.getQuantity());
         record.setDispensedBy(currentUser != null ? currentUser.getFullName() : "Pharmacist");
         record.setDispensedAt(Instant.now());
         record.setNotes(req.getNotes());
 
-        record = medicineIssueRecordRepository.save(record);
-
-        auditService.logAction(
-                "MEDICINE_ISSUED",
-                "MedicineIssueRecord",
-                currentUser,
-                record.getId().toString(),
-                Map.of("medicine_id", m.getId(), "quantity", req.getQuantity()),
-                ipAddress,
-                userAgent
-        );
-
+        medicineIssueRecordRepository.save(record);
+        auditService.logAction("MEDICINE_ISSUED", "MedicineIssueRecord", currentUser, record.getId(),
+                Map.of("medicine_id", m.getId(), "quantity", req.getQuantity()), ipAddress, userAgent);
         return toIssueResponse(record);
     }
 
-    @Transactional(readOnly = true)
     public List<MedicineIssueResponse> getIssueRecords(int skip, int limit) {
         int page = limit > 0 ? skip / limit : 0;
         int size = limit > 0 ? limit : 50;
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-
-        Page<MedicineIssueRecord> records = medicineIssueRecordRepository.findAll(pageable);
-        return records.getContent().stream().map(this::toIssueResponse).toList();
+        return medicineIssueRecordRepository.findAll(pageable).getContent().stream().map(this::toIssueResponse).toList();
     }
 
     public MedicineResponse toResponse(Medicine m) {
@@ -249,17 +199,11 @@ public class PharmacyService {
     public MedicineIssueResponse toIssueResponse(MedicineIssueRecord r) {
         MedicineIssueResponse res = new MedicineIssueResponse();
         res.setId(r.getId());
-        if (r.getMedicine() != null) {
-            res.setMedicineId(r.getMedicine().getId());
-            res.setMedicineName(r.getMedicine().getName());
-        }
-        if (r.getPatient() != null) {
-            res.setPatientId(r.getPatient().getId());
-            res.setPatientName(r.getPatient().getFullName());
-        }
-        if (r.getPrescription() != null) {
-            res.setPrescriptionId(r.getPrescription().getId());
-        }
+        res.setMedicineId(r.getMedicineId());
+        res.setMedicineName(r.getMedicineName());
+        res.setPatientId(r.getPatientId());
+        res.setPatientName(r.getPatientName());
+        res.setPrescriptionId(r.getPrescriptionId());
         res.setQuantity(r.getQuantity());
         res.setDispensedBy(r.getDispensedBy());
         res.setDispensedAt(r.getDispensedAt());
@@ -268,4 +212,3 @@ public class PharmacyService {
         return res;
     }
 }
-

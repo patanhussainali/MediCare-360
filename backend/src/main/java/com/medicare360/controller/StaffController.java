@@ -51,7 +51,7 @@ public class StaffController {
 
     @GetMapping("/nurses/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<NurseResponse> getNurse(@PathVariable("id") Long id) {
+    public ResponseEntity<NurseResponse> getNurse(@PathVariable("id") String id) {
         return ResponseEntity.ok(staffService.getNurseById(id));
     }
 

@@ -47,7 +47,7 @@ public class BillingController {
     public ResponseEntity<List<InvoiceResponse>> listInvoices(
             @RequestParam(value = "skip", defaultValue = "0") int skip,
             @RequestParam(value = "limit", defaultValue = "50") int limit,
-            @RequestParam(value = "patient_id", required = false) Long patientId,
+            @RequestParam(value = "patient_id", required = false) String patientId,
             @RequestParam(value = "payment_status", required = false) String paymentStatus,
             @AuthenticationPrincipal UserPrincipal principal
     ) {
@@ -57,14 +57,14 @@ public class BillingController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<InvoiceResponse> getInvoice(@PathVariable("id") Long id) {
+    public ResponseEntity<InvoiceResponse> getInvoice(@PathVariable("id") String id) {
         return ResponseEntity.ok(billingService.getById(id));
     }
 
     @RequestMapping(value = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('RECEPTIONIST')")
     public ResponseEntity<InvoiceResponse> updateInvoice(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @RequestBody InvoiceUpdateRequest req,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request
@@ -76,7 +76,7 @@ public class BillingController {
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('RECEPTIONIST') or hasAuthority('PHARMACIST') or hasAuthority('PATIENT')")
     public ResponseEntity<InvoiceResponse> updateInvoiceStatus(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @RequestBody InvoiceStatusUpdateRequest req,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request

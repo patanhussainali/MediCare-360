@@ -1,39 +1,41 @@
 package com.medicare360.entity;
 
 import com.medicare360.common.BaseEntity;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.Instant;
 
-@Entity
-@Table(name = "invoices")
+@Document(collection = "invoices")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Invoice extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(name = "invoice_number", unique = true, length = 50)
+    @Indexed(unique = true)
+    @Field("invoice_number")
     private String invoiceNumber;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id")
-    private Patient patient;
+    @Field("patient_id")
+    private String patientId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "appointment_id")
-    private Appointment appointment;
+    @Field("patient_name")
+    private String patientName;
 
-    @Column(columnDefinition = "TEXT")
+    @Field("appointment_id")
+    private String appointmentId;
+
     private String description;
 
-    @Column(name = "items_json", columnDefinition = "TEXT")
+    @Field("items_json")
     private String itemsJson = "[]";
 
     private double subtotal = 0.0;
@@ -42,19 +44,17 @@ public class Invoice extends BaseEntity {
 
     private double discount = 0.0;
 
-    @Column(name = "total_amount")
+    @Field("total_amount")
     private double totalAmount = 0.0;
 
-    @Convert(converter = PaymentStatusConverter.class)
-    @Column(name = "payment_status", length = 9)
+    @Field("payment_status")
     private PaymentStatus paymentStatus;
 
-    @Column(name = "payment_method", length = 50)
+    @Field("payment_method")
     private String paymentMethod;
 
-    @Column(name = "paid_at", columnDefinition = "DATETIME")
+    @Field("paid_at")
     private Instant paidAt;
 
-    @Column(columnDefinition = "TEXT")
     private String notes;
 }

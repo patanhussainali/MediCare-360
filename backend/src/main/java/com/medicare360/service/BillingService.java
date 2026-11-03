@@ -13,7 +13,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -32,13 +31,9 @@ public class BillingService {
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
 
-    public BillingService(
-            InvoiceRepository invoiceRepository,
-            PatientRepository patientRepository,
-            AppointmentRepository appointmentRepository,
-            AuditService auditService,
-            ObjectMapper objectMapper
-    ) {
+    public BillingService(InvoiceRepository invoiceRepository, PatientRepository patientRepository,
+                          AppointmentRepository appointmentRepository, AuditService auditService,
+                          ObjectMapper objectMapper) {
         this.invoiceRepository = invoiceRepository;
         this.patientRepository = patientRepository;
         this.appointmentRepository = appointmentRepository;
@@ -52,40 +47,34 @@ public class BillingService {
         return "INV-" + dateStr + "-" + randNum;
     }
 
-    @Transactional(readOnly = true)
-    public List<InvoiceResponse> getMulti(int skip, int limit, Long patientId, String paymentStatusStr, User currentUser) {
+    public List<InvoiceResponse> getMulti(int skip, int limit, String patientId, String paymentStatusStr, User currentUser) {
+        final String scopedPatientId;
         if (currentUser != null && currentUser.getRole() == UserRole.PATIENT) {
-            patientId = patientRepository.findByUserId(currentUser.getId()).map(Patient::getId).orElse(-1L);
+            scopedPatientId = patientRepository.findByUserId(currentUser.getId()).map(Patient::getId).orElse("-1");
+        } else {
+            scopedPatientId = patientId;
         }
-        Long scopedPatientId = patientId;
         int page = limit > 0 ? skip / limit : 0;
         int size = limit > 0 ? limit : 50;
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
         Page<Invoice> invoices = invoiceRepository.findAll(pageable);
         return invoices.getContent().stream()
-                .filter(i -> scopedPatientId == null || (i.getPatient() != null && i.getPatient().getId().equals(scopedPatientId)))
+                .filter(i -> scopedPatientId == null || scopedPatientId.equals(i.getPatientId()))
                 .filter(i -> paymentStatusStr == null || (i.getPaymentStatus() != null && i.getPaymentStatus().getDbValue().equalsIgnoreCase(paymentStatusStr)))
                 .map(this::toResponse)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public InvoiceResponse getById(Long id) {
+    public InvoiceResponse getById(String id) {
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found"));
         return toResponse(invoice);
     }
 
-    @Transactional
     public InvoiceResponse create(InvoiceCreateRequest req, User currentUser, String ipAddress, String userAgent) {
         Patient patient = patientRepository.findById(req.getPatientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
-
-        Appointment apt = null;
-        if (req.getAppointmentId() != null) {
-            apt = appointmentRepository.findById(req.getAppointmentId()).orElse(null);
-        }
 
         String invNum = generateInvoiceNumber();
         while (invoiceRepository.findByInvoiceNumber(invNum).isPresent()) {
@@ -95,12 +84,20 @@ public class BillingService {
         double subtotal = req.getSubtotal() != null ? req.getSubtotal() : 0.0;
         double tax = req.getTax() != null ? req.getTax() : 0.0;
         double discount = req.getDiscount() != null ? req.getDiscount() : 0.0;
-        double total = req.getTotalAmount() != null && req.getTotalAmount() > 0 ? req.getTotalAmount() : Math.max(0.0, subtotal + tax - discount);
+        double total = req.getTotalAmount() != null && req.getTotalAmount() > 0
+                ? req.getTotalAmount() : Math.max(0.0, subtotal + tax - discount);
 
         Invoice invoice = new Invoice();
         invoice.setInvoiceNumber(invNum);
-        invoice.setPatient(patient);
-        invoice.setAppointment(apt);
+        invoice.setPatientId(patient.getId());
+        invoice.setPatientName(patient.getFullName());
+
+        if (req.getAppointmentId() != null && !req.getAppointmentId().isBlank()) {
+            String aptId = appointmentRepository.findById(req.getAppointmentId())
+                    .map(apt -> apt.getId()).orElse(null);
+            invoice.setAppointmentId(aptId);
+        }
+
         invoice.setDescription(req.getDescription());
         invoice.setSubtotal(subtotal);
         invoice.setTax(tax);
@@ -115,9 +112,7 @@ public class BillingService {
         invoice.setPaymentMethod(req.getPaymentMethod());
         invoice.setNotes(req.getNotes());
 
-        if (status == PaymentStatus.PAID) {
-            invoice.setPaidAt(Instant.now());
-        }
+        if (status == PaymentStatus.PAID) invoice.setPaidAt(Instant.now());
 
         if (req.getItems() != null) {
             try {
@@ -128,22 +123,13 @@ public class BillingService {
         }
 
         invoice = invoiceRepository.save(invoice);
-
-        auditService.logAction(
-                "INVOICE_CREATED",
-                "Invoice",
-                currentUser,
-                invoice.getId().toString(),
+        auditService.logAction("INVOICE_CREATED", "Invoice", currentUser, invoice.getId(),
                 Map.of("invoice_number", invoice.getInvoiceNumber(), "total", invoice.getTotalAmount()),
-                ipAddress,
-                userAgent
-        );
-
+                ipAddress, userAgent);
         return toResponse(invoice);
     }
 
-    @Transactional
-    public InvoiceResponse update(Long id, InvoiceUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
+    public InvoiceResponse update(String id, InvoiceUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found"));
 
@@ -172,54 +158,33 @@ public class BillingService {
         }
 
         invoice = invoiceRepository.save(invoice);
-
-        auditService.logAction(
-                "INVOICE_UPDATED",
-                "Invoice",
-                currentUser,
-                invoice.getId().toString(),
-                Map.of("id", invoice.getId()),
-                ipAddress,
-                userAgent
-        );
-
+        auditService.logAction("INVOICE_UPDATED", "Invoice", currentUser, invoice.getId(),
+                Map.of("id", invoice.getId()), ipAddress, userAgent);
         return toResponse(invoice);
     }
 
-    @Transactional
-    public InvoiceResponse updateStatus(Long id, InvoiceStatusUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
+    public InvoiceResponse updateStatus(String id, InvoiceStatusUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found"));
 
         PaymentStatus oldStatus = invoice.getPaymentStatus();
         PaymentStatus newStatus = PaymentStatus.fromDbValue(req.getPaymentStatus());
+
         if (currentUser != null && currentUser.getRole() == UserRole.PATIENT) {
-            Long ownPatientId = patientRepository.findByUserId(currentUser.getId()).map(Patient::getId).orElse(-1L);
-            if (invoice.getPatient() == null || !ownPatientId.equals(invoice.getPatient().getId()) || newStatus != PaymentStatus.PAID) {
+            String ownPatientId = patientRepository.findByUserId(currentUser.getId()).map(Patient::getId).orElse("-1");
+            if (invoice.getPatientId() == null || !ownPatientId.equals(invoice.getPatientId()) || newStatus != PaymentStatus.PAID) {
                 throw new com.medicare360.exception.ForbiddenException("Patients can pay only their own invoices.");
             }
         }
-        invoice.setPaymentStatus(newStatus);
 
-        if (req.getPaymentMethod() != null) {
-            invoice.setPaymentMethod(req.getPaymentMethod());
-        }
-        if (newStatus == PaymentStatus.PAID && invoice.getPaidAt() == null) {
-            invoice.setPaidAt(Instant.now());
-        }
+        invoice.setPaymentStatus(newStatus);
+        if (req.getPaymentMethod() != null) invoice.setPaymentMethod(req.getPaymentMethod());
+        if (newStatus == PaymentStatus.PAID && invoice.getPaidAt() == null) invoice.setPaidAt(Instant.now());
 
         invoice = invoiceRepository.save(invoice);
-
-        auditService.logAction(
-                "INVOICE_STATUS_UPDATED",
-                "Invoice",
-                currentUser,
-                invoice.getId().toString(),
+        auditService.logAction("INVOICE_STATUS_UPDATED", "Invoice", currentUser, invoice.getId(),
                 Map.of("from", oldStatus != null ? oldStatus.getDbValue() : "", "to", newStatus.getDbValue()),
-                ipAddress,
-                userAgent
-        );
-
+                ipAddress, userAgent);
         return toResponse(invoice);
     }
 
@@ -227,13 +192,9 @@ public class BillingService {
         InvoiceResponse res = new InvoiceResponse();
         res.setId(inv.getId());
         res.setInvoiceNumber(inv.getInvoiceNumber());
-        if (inv.getPatient() != null) {
-            res.setPatientId(inv.getPatient().getId());
-            res.setPatientName(inv.getPatient().getFullName());
-        }
-        if (inv.getAppointment() != null) {
-            res.setAppointmentId(inv.getAppointment().getId());
-        }
+        res.setPatientId(inv.getPatientId());
+        res.setPatientName(inv.getPatientName());
+        res.setAppointmentId(inv.getAppointmentId());
         res.setDescription(inv.getDescription());
         res.setSubtotal(inv.getSubtotal());
         res.setTax(inv.getTax());

@@ -16,7 +16,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -32,14 +31,9 @@ public class AppointmentService {
     private final AuditService auditService;
     private final NotificationService notificationService;
 
-    public AppointmentService(
-            AppointmentRepository appointmentRepository,
-            PatientRepository patientRepository,
-            DoctorRepository doctorRepository,
-            DepartmentRepository departmentRepository,
-            AuditService auditService,
-            NotificationService notificationService
-    ) {
+    public AppointmentService(AppointmentRepository appointmentRepository, PatientRepository patientRepository,
+                               DoctorRepository doctorRepository, DepartmentRepository departmentRepository,
+                               AuditService auditService, NotificationService notificationService) {
         this.appointmentRepository = appointmentRepository;
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
@@ -48,49 +42,51 @@ public class AppointmentService {
         this.notificationService = notificationService;
     }
 
-    @Transactional(readOnly = true)
-    public List<AppointmentResponse> getMulti(int skip, int limit, Long patientId, Long doctorId, String statusStr, String dateStr) {
+    public List<AppointmentResponse> getMulti(int skip, int limit, String patientId, String doctorId, String statusStr, String dateStr) {
         int page = limit > 0 ? skip / limit : 0;
         int size = limit > 0 ? limit : 50;
         Pageable pageable = PageRequest.of(page, size, Sort.by("appointmentDate").descending());
 
         Page<Appointment> appointments = appointmentRepository.findAll(pageable);
         return appointments.getContent().stream()
-                .filter(a -> patientId == null || (a.getPatient() != null && a.getPatient().getId().equals(patientId)))
-                .filter(a -> doctorId == null || (a.getDoctor() != null && a.getDoctor().getId().equals(doctorId)))
+                .filter(a -> patientId == null || patientId.equals(a.getPatientId()))
+                .filter(a -> doctorId == null || doctorId.equals(a.getDoctorId()))
                 .filter(a -> statusStr == null || (a.getStatus() != null && a.getStatus().getDbValue().equalsIgnoreCase(statusStr)))
-                .filter(a -> dateStr == null || (a.getAppointmentDate() != null && a.getAppointmentDate().equals(dateStr)))
+                .filter(a -> dateStr == null || dateStr.equals(a.getAppointmentDate()))
                 .map(this::toResponse)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public AppointmentResponse getById(Long id) {
+    public AppointmentResponse getById(String id) {
         Appointment apt = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
         return toResponse(apt);
     }
 
-    @Transactional
     public AppointmentResponse create(AppointmentCreateRequest req, User currentUser, String ipAddress, String userAgent) {
         Patient patient = patientRepository.findById(req.getPatientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
-
         Doctor doctor = doctorRepository.findById(req.getDoctorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
 
         Department dept = null;
-        if (req.getDepartmentId() != null) {
+        if (req.getDepartmentId() != null && !req.getDepartmentId().isBlank()) {
             dept = departmentRepository.findById(req.getDepartmentId()).orElse(null);
-        } else if (doctor.getDepartment() != null) {
-            dept = doctor.getDepartment();
+        } else if (doctor.getDepartmentId() != null) {
+            dept = departmentRepository.findById(doctor.getDepartmentId()).orElse(null);
         }
 
         Appointment apt = new Appointment();
         apt.setAppointmentNumber("APT-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase());
-        apt.setPatient(patient);
-        apt.setDoctor(doctor);
-        apt.setDepartment(dept);
+        apt.setPatientId(patient.getId());
+        apt.setPatientName(patient.getFullName());
+        apt.setDoctorId(doctor.getId());
+        apt.setDoctorName(doctor.getFullName());
+        if (dept != null) {
+            apt.setDepartmentId(dept.getId());
+            apt.setDepartmentName(dept.getName());
+        }
+
         String dateStr = req.getAppointmentDate();
         String timeStr = req.getAppointmentTime();
         if (dateStr != null && dateStr.contains("T")) {
@@ -100,61 +96,36 @@ public class AppointmentService {
                 timeStr = parts[1].length() >= 5 ? parts[1].substring(0, 5) : parts[1];
             }
         }
-        if (dateStr == null || dateStr.trim().isEmpty()) {
-            dateStr = java.time.LocalDate.now().toString();
-        }
-        if (timeStr == null || timeStr.trim().isEmpty()) {
-            timeStr = "09:00 AM";
-        }
-        apt.setAppointmentDate(dateStr);
-        apt.setAppointmentTime(timeStr);
+        apt.setAppointmentDate(dateStr != null && !dateStr.isBlank() ? dateStr : java.time.LocalDate.now().toString());
+        apt.setAppointmentTime(timeStr != null && !timeStr.isBlank() ? timeStr : "09:00 AM");
         apt.setType(req.getType() != null ? req.getType() : "General Consultation");
         apt.setReason(req.getReason());
         apt.setStatus(AppointmentStatus.SCHEDULED);
         apt.setNotes(req.getNotes());
-
         apt = appointmentRepository.save(apt);
 
-        auditService.logAction(
-                "APPOINTMENT_CREATED",
-                "Appointment",
-                currentUser,
-                apt.getId().toString(),
-                Map.of(
-                        "patient_id", apt.getPatient().getId(),
-                        "doctor_id", apt.getDoctor().getId(),
-                        "date", String.valueOf(apt.getAppointmentDate()),
-                        "time", String.valueOf(apt.getAppointmentTime())
-                ),
-                ipAddress,
-                userAgent
-        );
+        auditService.logAction("APPOINTMENT_CREATED", "Appointment", currentUser, apt.getId(),
+                Map.of("patient_id", apt.getPatientId(), "doctor_id", apt.getDoctorId(),
+                        "date", String.valueOf(apt.getAppointmentDate())),
+                ipAddress, userAgent);
 
-        if (doctor.getUser() != null) {
-            notificationService.createNotification(
-                    doctor.getUser().getId(),
+        if (doctor.getUserId() != null) {
+            notificationService.createNotification(doctor.getUserId(),
                     "New Appointment Scheduled",
                     "You have a new appointment with " + patient.getFullName() + " on " + apt.getAppointmentDate() + ".",
-                    "appointment",
-                    "/doctor/appointments"
-            );
+                    "appointment", "/doctor/appointments");
         }
-
-        if (patient.getUser() != null) {
-            notificationService.createNotification(
-                    patient.getUser().getId(),
+        if (patient.getUserId() != null) {
+            notificationService.createNotification(patient.getUserId(),
                     "Appointment Confirmed",
                     "Your appointment is scheduled for " + apt.getAppointmentDate() + " at " + apt.getAppointmentTime() + ".",
-                    "appointment",
-                    "/patient/appointments"
-            );
+                    "appointment", "/patient/appointments");
         }
 
         return toResponse(apt);
     }
 
-    @Transactional
-    public AppointmentResponse update(Long id, AppointmentUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
+    public AppointmentResponse update(String id, AppointmentUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
         Appointment apt = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
 
@@ -163,87 +134,50 @@ public class AppointmentService {
         if (req.getType() != null) apt.setType(req.getType());
         if (req.getReason() != null) apt.setReason(req.getReason());
         if (req.getNotes() != null) apt.setNotes(req.getNotes());
-
         if (req.getStatus() != null && !req.getStatus().isBlank()) {
             apt.setStatus(AppointmentStatus.fromDbValue(req.getStatus()));
         }
-
         apt = appointmentRepository.save(apt);
 
-        auditService.logAction(
-                "APPOINTMENT_UPDATED",
-                "Appointment",
-                currentUser,
-                apt.getId().toString(),
-                Map.of("id", apt.getId()),
-                ipAddress,
-                userAgent
-        );
-
+        auditService.logAction("APPOINTMENT_UPDATED", "Appointment", currentUser, apt.getId(),
+                Map.of("id", apt.getId()), ipAddress, userAgent);
         return toResponse(apt);
     }
 
-    @Transactional
-    public AppointmentResponse updateStatus(Long id, AppointmentStatusUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
+    public AppointmentResponse updateStatus(String id, AppointmentStatusUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
         Appointment apt = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
 
         AppointmentStatus oldStatus = apt.getStatus();
         AppointmentStatus newStatus = AppointmentStatus.fromDbValue(req.getStatus());
         apt.setStatus(newStatus);
-        if (req.getNotes() != null) {
-            apt.setNotes(req.getNotes());
-        }
-
+        if (req.getNotes() != null) apt.setNotes(req.getNotes());
         apt = appointmentRepository.save(apt);
 
-        auditService.logAction(
-                "APPOINTMENT_STATUS_CHANGED",
-                "Appointment",
-                currentUser,
-                apt.getId().toString(),
+        auditService.logAction("APPOINTMENT_STATUS_CHANGED", "Appointment", currentUser, apt.getId(),
                 Map.of("from", oldStatus != null ? oldStatus.getDbValue() : "", "to", newStatus.getDbValue()),
-                ipAddress,
-                userAgent
-        );
-
+                ipAddress, userAgent);
         return toResponse(apt);
     }
 
-    @Transactional
-    public void delete(Long id, User currentUser, String ipAddress, String userAgent) {
+    public void delete(String id, User currentUser, String ipAddress, String userAgent) {
         Appointment apt = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
-
         appointmentRepository.delete(apt);
-
-        auditService.logAction(
-                "APPOINTMENT_DELETED",
-                "Appointment",
-                currentUser,
-                id.toString(),
-                Map.of("appointment_number", apt.getAppointmentNumber()),
-                ipAddress,
-                userAgent
-        );
+        auditService.logAction("APPOINTMENT_DELETED", "Appointment", currentUser, id,
+                Map.of("appointment_number", apt.getAppointmentNumber()), ipAddress, userAgent);
     }
 
     public AppointmentResponse toResponse(Appointment a) {
         AppointmentResponse res = new AppointmentResponse();
         res.setId(a.getId());
         res.setAppointmentNumber(a.getAppointmentNumber());
-        if (a.getPatient() != null) {
-            res.setPatientId(a.getPatient().getId());
-            res.setPatientName(a.getPatient().getFullName());
-        }
-        if (a.getDoctor() != null) {
-            res.setDoctorId(a.getDoctor().getId());
-            res.setDoctorName(a.getDoctor().getFullName());
-        }
-        if (a.getDepartment() != null) {
-            res.setDepartmentId(a.getDepartment().getId());
-            res.setDepartmentName(a.getDepartment().getName());
-        }
+        res.setPatientId(a.getPatientId());
+        res.setPatientName(a.getPatientName());
+        res.setDoctorId(a.getDoctorId());
+        res.setDoctorName(a.getDoctorName());
+        res.setDepartmentId(a.getDepartmentId());
+        res.setDepartmentName(a.getDepartmentName());
         res.setAppointmentDate(a.getAppointmentDate());
         res.setAppointmentTime(a.getAppointmentTime());
         res.setType(a.getType());
@@ -255,4 +189,3 @@ public class AppointmentService {
         return res;
     }
 }
-

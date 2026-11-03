@@ -2,7 +2,7 @@
 $env:JAVA_HOME = "C:\dev\java21\jdk-21.0.7+6"
 $env:PATH = "$env:JAVA_HOME\bin;C:\dev\maven\apache-maven-3.9.9\bin;$env:PATH"
 $env:MEDICARE_DB_PATH = Join-Path $PSScriptRoot 'data\medicare360.db'
-$javaBackend = "$PSScriptRoot\java-backend"
+$javaBackend = "$PSScriptRoot\backend"
 Set-Location $javaBackend
 
 # Compile and run from the current source tree. Running through Spring Boot avoids

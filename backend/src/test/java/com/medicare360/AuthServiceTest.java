@@ -3,7 +3,6 @@ package com.medicare360;
 import com.medicare360.dto.LoginRequest;
 import com.medicare360.dto.RegisterRequest;
 import com.medicare360.dto.TokenResponse;
-import com.medicare360.dto.UserResponse;
 import com.medicare360.entity.User;
 import com.medicare360.entity.UserRole;
 import com.medicare360.exception.BadRequestException;
@@ -50,7 +49,7 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         sampleUser = new User();
-        sampleUser.setId(10L);
+        sampleUser.setId("user-10");
         sampleUser.setEmail("doctor@example.com");
         sampleUser.setFullName("Dr. Gregory House");
         sampleUser.setRole(UserRole.DOCTOR);
@@ -65,7 +64,6 @@ class AuthServiceTest {
         admin.setRole(UserRole.ADMIN);
         admin.setActive(true);
         when(userRepository.findAll()).thenReturn(List.of(admin));
-
         assertTrue(authService.checkAdminExists());
     }
 
@@ -80,8 +78,8 @@ class AuthServiceTest {
         when(userRepository.findByEmailIgnoreCase("doctor@example.com")).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches("secret123", "hashedPassword123")).thenReturn(true);
         when(userRepository.save(any(User.class))).thenReturn(sampleUser);
-        when(jwtService.generateAccessToken(10L, "DOCTOR")).thenReturn("mock-access-token");
-        when(jwtService.generateRefreshToken(10L, "DOCTOR")).thenReturn("mock-refresh-token");
+        when(jwtService.generateAccessToken("user-10", "DOCTOR")).thenReturn("mock-access-token");
+        when(jwtService.generateRefreshToken("user-10", "DOCTOR")).thenReturn("mock-refresh-token");
 
         LoginRequest req = new LoginRequest();
         req.setEmail("doctor@example.com");
@@ -101,7 +99,7 @@ class AuthServiceTest {
         LoginRequest req = new LoginRequest();
         req.setEmail("doctor@example.com");
         req.setPassword("secret123");
-        req.setRole("ADMIN"); // User is DOCTOR, portal is ADMIN
+        req.setRole("ADMIN");
 
         assertThrows(BadRequestException.class, () -> authService.authenticate(req, "127.0.0.1", "Mozilla"));
     }
@@ -143,4 +141,3 @@ class AuthServiceTest {
         assertThrows(BadRequestException.class, () -> authService.registerPatient(req, "127.0.0.1", "Mozilla"));
     }
 }
-

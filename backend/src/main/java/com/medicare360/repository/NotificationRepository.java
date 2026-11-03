@@ -3,17 +3,17 @@ package com.medicare360.repository;
 import com.medicare360.entity.Notification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface NotificationRepository extends JpaRepository<Notification, Long> {
+public interface NotificationRepository extends MongoRepository<Notification, String> {
 
-    Page<Notification> findByUser_IdOrUserIsNullOrderByCreatedAtDesc(Long userId, Pageable pageable);
+    Page<Notification> findByUserIdOrUserIdIsNullOrderByCreatedAtDesc(String userId, Pageable pageable);
 
-    long countByUser_IdAndIsReadFalse(Long userId);
+    long countByUserIdAndIsReadFalse(String userId);
 
-    Optional<Notification> findByIdAndUser_Id(Long id, Long userId);
+    Optional<Notification> findByIdAndUserId(String id, String userId);
 }

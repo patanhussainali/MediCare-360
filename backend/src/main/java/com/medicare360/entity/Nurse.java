@@ -1,48 +1,45 @@
 package com.medicare360.entity;
 
 import com.medicare360.common.BaseEntity;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-@Entity
-@Table(name = "nurses")
+@Document(collection = "nurses")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Nurse extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(name = "nurse_id", unique = true, length = 50)
+    @Indexed(unique = true)
+    @Field("nurse_id")
     private String nurseId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Field("user_id")
+    private String userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id")
-    private Department department;
+    @Field("department_id")
+    private String departmentId;
 
-    @Column(name = "full_name", length = 255)
+    @Field("full_name")
     private String fullName;
 
-    @Column(name = "license_number", length = 100)
+    @Field("license_number")
     private String licenseNumber;
 
-    @Column(length = 50)
     private String shift = "Morning";
 
-    @Column(length = 50)
     private String phone;
 
-    @Column(unique = true, length = 255)
+    @Indexed(unique = true, sparse = true)
     private String email;
 
-    @Column(length = 50)
     private String status = "Active";
 }

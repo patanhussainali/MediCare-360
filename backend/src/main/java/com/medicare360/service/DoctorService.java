@@ -1,5 +1,6 @@
 package com.medicare360.service;
 
+import com.medicare360.common.PhoneNumberValidator;
 import com.medicare360.dto.DoctorCreateRequest;
 import com.medicare360.dto.DoctorResponse;
 import com.medicare360.dto.DoctorUpdateRequest;
@@ -7,7 +8,6 @@ import com.medicare360.entity.Department;
 import com.medicare360.entity.Doctor;
 import com.medicare360.entity.User;
 import com.medicare360.entity.UserRole;
-import com.medicare360.common.PhoneNumberValidator;
 import com.medicare360.exception.BadRequestException;
 import com.medicare360.exception.ResourceNotFoundException;
 import com.medicare360.repository.DepartmentRepository;
@@ -19,7 +19,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -34,13 +33,8 @@ public class DoctorService {
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
 
-    public DoctorService(
-            DoctorRepository doctorRepository,
-            DepartmentRepository departmentRepository,
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            AuditService auditService
-    ) {
+    public DoctorService(DoctorRepository doctorRepository, DepartmentRepository departmentRepository,
+                         UserRepository userRepository, PasswordEncoder passwordEncoder, AuditService auditService) {
         this.doctorRepository = doctorRepository;
         this.departmentRepository = departmentRepository;
         this.userRepository = userRepository;
@@ -48,35 +42,31 @@ public class DoctorService {
         this.auditService = auditService;
     }
 
-    @Transactional(readOnly = true)
-    public List<DoctorResponse> getMulti(int skip, int limit, Long departmentId, Boolean isAvailable) {
+    public List<DoctorResponse> getMulti(int skip, int limit, String departmentId, Boolean isAvailable) {
         int page = limit > 0 ? skip / limit : 0;
         int size = limit > 0 ? limit : 100;
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
 
         Page<Doctor> doctors = doctorRepository.findAll(pageable);
         return doctors.getContent().stream()
-                .filter(d -> departmentId == null || (d.getDepartment() != null && d.getDepartment().getId().equals(departmentId)))
+                .filter(d -> departmentId == null || departmentId.equals(d.getDepartmentId()))
                 .filter(d -> isAvailable == null || (isAvailable ? "Available".equalsIgnoreCase(d.getStatus()) : !"Available".equalsIgnoreCase(d.getStatus())))
                 .map(this::toResponse)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public DoctorResponse getById(Long id) {
+    public DoctorResponse getById(String id) {
         Doctor doc = doctorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
         return toResponse(doc);
     }
 
-    @Transactional(readOnly = true)
-    public DoctorResponse getByUserId(Long userId) {
+    public DoctorResponse getByUserId(String userId) {
         Doctor doc = doctorRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor profile not found for user"));
         return toResponse(doc);
     }
 
-    @Transactional
     public DoctorResponse create(DoctorCreateRequest req, User currentUser, String ipAddress, String userAgent) {
         PhoneNumberValidator.validateIfPresent(req.getPhone());
         String cleanEmail = req.getEmail().trim().toLowerCase();
@@ -85,29 +75,21 @@ public class DoctorService {
         }
 
         Department dept = null;
-        if (req.getDepartmentId() != null) {
+        if (req.getDepartmentId() != null && !req.getDepartmentId().isBlank()) {
             dept = departmentRepository.findById(req.getDepartmentId()).orElse(null);
         }
         if (dept == null) {
             String requestedDepartment = req.getDepartment() != null ? req.getDepartment() : req.getSpecialization();
             if (requestedDepartment != null) {
-                String normalizedDepartment = requestedDepartment.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+                String norm = requestedDepartment.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
                 dept = departmentRepository.findAll().stream()
-                        .filter(d -> d.getName().replaceAll("[^A-Za-z0-9]", "").equalsIgnoreCase(normalizedDepartment)
-                                || (d.getCode() != null && d.getCode().replaceAll("[^A-Za-z0-9]", "").equalsIgnoreCase(normalizedDepartment)))
+                        .filter(d -> d.getName().replaceAll("[^A-Za-z0-9]", "").equalsIgnoreCase(norm))
                         .findFirst().orElse(null);
             }
         }
-        if (dept == null && req.getSpecialization() != null) {
-            String normalizedSpecialization = req.getSpecialization().replaceAll("[^A-Za-z0-9]", "").toLowerCase();
-            dept = departmentRepository.findAll().stream()
-                    .filter(d -> d.getName().replaceAll("[^A-Za-z0-9]", "").equalsIgnoreCase(normalizedSpecialization))
-                    .findFirst().orElse(null);
-        }
 
         String password = req.getPassword() != null && !req.getPassword().isBlank()
-                ? req.getPassword()
-                : UUID.randomUUID().toString().substring(0, 12);
+                ? req.getPassword() : UUID.randomUUID().toString().substring(0, 12);
 
         User user = new User();
         user.setEmail(cleanEmail);
@@ -122,9 +104,12 @@ public class DoctorService {
 
         Doctor doc = new Doctor();
         doc.setDoctorId("DOC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase());
-        doc.setUser(user);
+        doc.setUserId(user.getId());
         doc.setFullName(req.getFullName());
-        doc.setDepartment(dept);
+        if (dept != null) {
+            doc.setDepartmentId(dept.getId());
+            doc.setDepartmentName(dept.getName());
+        }
         doc.setSpecialization(req.getSpecialization());
         doc.setQualification(req.getQualification());
         doc.setExperienceYears(req.getExperienceYears() != null ? req.getExperienceYears() : 0);
@@ -133,24 +118,17 @@ public class DoctorService {
         doc.setPhone(req.getPhone());
         doc.setEmail(cleanEmail);
         doc.setStatus(req.getStatus() != null ? req.getStatus() : "Available");
-
         doc = doctorRepository.save(doc);
 
-        auditService.logAction(
-                "DOCTOR_CREATED",
-                "Doctor",
-                currentUser != null ? currentUser : user,
-                doc.getId().toString(),
-                Map.of("email", doc.getEmail(), "specialization", doc.getSpecialization()),
-                ipAddress,
-                userAgent
-        );
+        auditService.logAction("DOCTOR_CREATED", "Doctor",
+                currentUser != null ? currentUser : user, doc.getId(),
+                Map.of("email", doc.getEmail(), "specialization", String.valueOf(doc.getSpecialization())),
+                ipAddress, userAgent);
 
         return toResponse(doc);
     }
 
-    @Transactional
-    public DoctorResponse update(Long id, DoctorUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
+    public DoctorResponse update(String id, DoctorUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
         PhoneNumberValidator.validateIfPresent(req.getPhone());
         Doctor doc = doctorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
@@ -164,23 +142,16 @@ public class DoctorService {
         if (req.getPhone() != null) doc.setPhone(req.getPhone());
         if (req.getStatus() != null) doc.setStatus(req.getStatus());
 
-        if (req.getDepartmentId() != null) {
-            Department dept = departmentRepository.findById(req.getDepartmentId()).orElse(null);
-            doc.setDepartment(dept);
+        if (req.getDepartmentId() != null && !req.getDepartmentId().isBlank()) {
+            departmentRepository.findById(req.getDepartmentId()).ifPresent(dept -> {
+                doc.setDepartmentId(dept.getId());
+                doc.setDepartmentName(dept.getName());
+            });
         }
 
-        doc = doctorRepository.save(doc);
-
-        auditService.logAction(
-                "DOCTOR_UPDATED",
-                "Doctor",
-                currentUser,
-                doc.getId().toString(),
-                Map.of("id", doc.getId()),
-                ipAddress,
-                userAgent
-        );
-
+        doctorRepository.save(doc);
+        auditService.logAction("DOCTOR_UPDATED", "Doctor", currentUser, doc.getId(),
+                Map.of("id", doc.getId()), ipAddress, userAgent);
         return toResponse(doc);
     }
 
@@ -188,9 +159,7 @@ public class DoctorService {
         DoctorResponse res = new DoctorResponse();
         res.setId(doc.getId());
         res.setDoctorId(doc.getDoctorId());
-        if (doc.getUser() != null) {
-            res.setUserId(doc.getUser().getId());
-        }
+        res.setUserId(doc.getUserId());
         res.setFullName(doc.getFullName());
         res.setSpecialization(doc.getSpecialization());
         res.setQualification(doc.getQualification());
@@ -200,10 +169,8 @@ public class DoctorService {
         res.setPhone(doc.getPhone());
         res.setEmail(doc.getEmail());
         res.setStatus(doc.getStatus());
-        if (doc.getDepartment() != null) {
-            res.setDepartmentId(doc.getDepartment().getId());
-            res.setDepartmentName(doc.getDepartment().getName());
-        }
+        res.setDepartmentId(doc.getDepartmentId());
+        res.setDepartmentName(doc.getDepartmentName());
         res.setCreatedAt(doc.getCreatedAt());
         res.setUpdatedAt(doc.getUpdatedAt());
         return res;

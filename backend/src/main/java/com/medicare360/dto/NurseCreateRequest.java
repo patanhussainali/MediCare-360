@@ -16,7 +16,7 @@ public class NurseCreateRequest {
     @NotBlank
     private String fullName;
 
-    private Long departmentId;
+    private String departmentId;
 
     private String shift = "Morning";
 

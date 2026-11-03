@@ -12,15 +12,15 @@ import java.util.List;
 @NoArgsConstructor
 public class InvoiceResponse {
 
-    private Long id;
+    private String id;
 
     private String invoiceNumber;
 
-    private Long patientId;
+    private String patientId;
 
     private String patientName;
 
-    private Long appointmentId;
+    private String appointmentId;
 
     private String description;
 

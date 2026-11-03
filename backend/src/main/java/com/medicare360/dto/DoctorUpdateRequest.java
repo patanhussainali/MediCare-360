@@ -22,7 +22,7 @@ public class DoctorUpdateRequest {
 
     private String email;
 
-    private Long departmentId;
+    private String departmentId;
 
     private Integer experienceYears;
 

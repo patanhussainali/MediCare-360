@@ -11,13 +11,13 @@ import java.util.List;
 
 public class UserPrincipal implements UserDetails {
 
-    private final Long userId;
+    private final String userId;
     private final String email;
     private final String role;
     private final boolean isActive;
     private final String hashedPassword;
 
-    public UserPrincipal(Long userId, String email, String role, boolean isActive, String hashedPassword) {
+    public UserPrincipal(String userId, String email, String role, boolean isActive, String hashedPassword) {
         this.userId = userId;
         this.email = email;
         this.role = role;
@@ -26,7 +26,7 @@ public class UserPrincipal implements UserDetails {
     }
 
     /** Convenience constructor for filter (no password needed). */
-    public UserPrincipal(Long userId, String email, UserRole role, boolean isActive) {
+    public UserPrincipal(String userId, String email, UserRole role, boolean isActive) {
         this(userId, email, role != null ? role.name() : null, isActive, null);
     }
 
@@ -41,7 +41,7 @@ public class UserPrincipal implements UserDetails {
         );
     }
 
-    public Long getUserId() {
+    public String getUserId() {
         return userId;
     }
 

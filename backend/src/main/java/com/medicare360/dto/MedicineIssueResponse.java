@@ -11,17 +11,17 @@ import java.time.Instant;
 @NoArgsConstructor
 public class MedicineIssueResponse {
 
-    private Long id;
+    private String id;
 
-    private Long medicineId;
+    private String medicineId;
 
     private String medicineName;
 
-    private Long patientId;
+    private String patientId;
 
     private String patientName;
 
-    private Long prescriptionId;
+    private String prescriptionId;
 
     private int quantity;
 

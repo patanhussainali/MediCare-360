@@ -12,7 +12,6 @@ import com.medicare360.security.TokenBlacklistService;
 import io.jsonwebtoken.Claims;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Map;
@@ -65,13 +64,12 @@ public class AuthService {
                 .anyMatch(u -> u.getRole() == UserRole.ADMIN && u.isActive());
     }
 
-    @Transactional
-    public User registerUser(String email, String password, String fullName, UserRole role, String phone, String departmentName, String ipAddress, String userAgent) {
+    public User registerUser(String email, String password, String fullName, UserRole role,
+                             String phone, String departmentName, String ipAddress, String userAgent) {
         String cleanEmail = email.trim().toLowerCase();
         if (userRepository.existsByEmailIgnoreCase(cleanEmail)) {
             throw new BadRequestException("A user account with this email address already exists.");
         }
-
         if (password == null || password.length() < 6) {
             throw new BadRequestException("Password must be at least 6 characters long.");
         }
@@ -85,14 +83,12 @@ public class AuthService {
         user.setDepartment(role == UserRole.PATIENT ? null : departmentName);
         user.setActive(true);
         user.setVerified(true);
-
         user = userRepository.save(user);
 
-        // Create associated role profile
         if (user.getRole() == UserRole.PATIENT) {
             Patient patient = new Patient();
             patient.setPatientId("PAT-" + (100000 + new Random().nextInt(900000)));
-            patient.setUser(user);
+            patient.setUserId(user.getId());
             patient.setFullName(user.getFullName());
             patient.setGender("Other");
             patient.setDateOfBirth("2000-01-01");
@@ -101,11 +97,7 @@ public class AuthService {
             patient.setStatus("Active");
             patientRepository.save(patient);
         } else if (user.getRole() == UserRole.DOCTOR) {
-            Doctor doctor = new Doctor();
-            doctor.setDoctorId("DOC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase());
-            doctor.setUser(user);
-            doctor.setFullName(user.getFullName());
-
+            // Find department by name
             Department dept = null;
             if (departmentName != null && !departmentName.isBlank()) {
                 dept = departmentRepository.findAll().stream()
@@ -113,10 +105,17 @@ public class AuthService {
                         .findFirst().orElse(null);
             }
             if (dept == null) {
-                dept = departmentRepository.findById(1L).orElse(null);
+                dept = departmentRepository.findAll().stream().findFirst().orElse(null);
             }
 
-            doctor.setDepartment(dept);
+            Doctor doctor = new Doctor();
+            doctor.setDoctorId("DOC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase());
+            doctor.setUserId(user.getId());
+            doctor.setFullName(user.getFullName());
+            if (dept != null) {
+                doctor.setDepartmentId(dept.getId());
+                doctor.setDepartmentName(dept.getName());
+            }
             doctor.setSpecialization(dept != null ? dept.getName() : "General Medicine");
             doctor.setQualification("MD, MBBS");
             doctor.setExperienceYears(5);
@@ -128,7 +127,7 @@ public class AuthService {
         } else if (user.getRole() == UserRole.NURSE) {
             Nurse nurse = new Nurse();
             nurse.setNurseId("NUR-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase());
-            nurse.setUser(user);
+            nurse.setUserId(user.getId());
             nurse.setFullName(user.getFullName());
             nurse.setLicenseNumber("RN-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase());
             nurse.setShift("Morning");
@@ -139,7 +138,7 @@ public class AuthService {
         } else if (user.getRole() == UserRole.RECEPTIONIST) {
             Receptionist rec = new Receptionist();
             rec.setReceptionistId("REC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase());
-            rec.setUser(user);
+            rec.setUserId(user.getId());
             rec.setFullName(user.getFullName());
             rec.setShift("Day");
             rec.setPhone(user.getPhone() != null ? user.getPhone() : "0000000000");
@@ -149,7 +148,7 @@ public class AuthService {
         } else if (user.getRole() == UserRole.PHARMACIST) {
             Pharmacist pharm = new Pharmacist();
             pharm.setPharmacistId("PHAR-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase());
-            pharm.setUser(user);
+            pharm.setUserId(user.getId());
             pharm.setFullName(user.getFullName());
             pharm.setLicenseNumber("RPH-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase());
             pharm.setPhone(user.getPhone() != null ? user.getPhone() : "0000000000");
@@ -159,43 +158,33 @@ public class AuthService {
         }
 
         auditService.logAction(
-                "USER_REGISTERED",
-                "User",
-                user,
-                user.getId().toString(),
+                "USER_REGISTERED", "User", user, user.getId(),
                 Map.of("email", user.getEmail(), "role", user.getRole().name()),
-                ipAddress,
-                userAgent
-        );
-
+                ipAddress, userAgent);
         return user;
     }
 
-    @Transactional
-    public TokenResponse setupAdmin(String email, String password, String fullName, String phone, String ipAddress, String userAgent) {
+    public TokenResponse setupAdmin(String email, String password, String fullName, String phone,
+                                    String ipAddress, String userAgent) {
         if (checkAdminExists()) {
             throw new BadRequestException("System administrator account is already configured.");
         }
         User admin = registerUser(email, password, fullName, UserRole.ADMIN, phone, null, ipAddress, userAgent);
-
         String access = jwtService.generateAccessToken(admin.getId(), admin.getRole().name());
         String refresh = jwtService.generateRefreshToken(admin.getId(), admin.getRole().name());
-
         return new TokenResponse(access, refresh, toUserResponse(admin));
     }
 
-    @Transactional
     public UserResponse registerPatient(RegisterRequest req, String ipAddress, String userAgent) {
-        User user = registerUser(req.getEmail(), req.getPassword(), req.getFullName(), UserRole.PATIENT, req.getPhoneNumber(), null, ipAddress, userAgent);
+        User user = registerUser(req.getEmail(), req.getPassword(), req.getFullName(),
+                UserRole.PATIENT, req.getPhoneNumber(), null, ipAddress, userAgent);
         return toUserResponse(user);
     }
 
-    @Transactional
     public TokenResponse authenticate(LoginRequest loginData, String ipAddress, String userAgent) {
         String cleanEmail = loginData.getEmail() != null ? loginData.getEmail().trim().toLowerCase() : "";
         User user = userRepository.findByEmailIgnoreCase(cleanEmail).orElse(null);
 
-        // Role enforcement check
         if (loginData.getRole() != null && !loginData.getRole().isBlank()) {
             String expectedRole = loginData.getRole().trim().toUpperCase();
             if (user == null || !user.getRole().name().equalsIgnoreCase(expectedRole)) {
@@ -210,7 +199,6 @@ public class AuthService {
         if (user == null || !passwordMatches) {
             throw new BadRequestException("Invalid credentials or unauthorized role");
         }
-
         if (!user.isActive()) {
             throw new BadRequestException("Account is deactivated. Please contact Hospital Administration.");
         }
@@ -221,20 +209,12 @@ public class AuthService {
         String access = jwtService.generateAccessToken(user.getId(), user.getRole().name());
         String refresh = jwtService.generateRefreshToken(user.getId(), user.getRole().name());
 
-        auditService.logAction(
-                "USER_LOGIN",
-                "User",
-                user,
-                user.getId().toString(),
-                Map.of("email", user.getEmail(), "role", user.getRole().name()),
-                ipAddress,
-                userAgent
-        );
+        auditService.logAction("USER_LOGIN", "User", user, user.getId(),
+                Map.of("email", user.getEmail(), "role", user.getRole().name()), ipAddress, userAgent);
 
         return new TokenResponse(access, refresh, toUserResponse(user));
     }
 
-    @Transactional
     public TokenResponse refreshToken(String refreshToken) {
         Claims claims = jwtService.validateToken(refreshToken);
         if (claims == null || !"refresh".equals(jwtService.extractType(claims))) {
@@ -246,46 +226,33 @@ public class AuthService {
             throw new BadRequestException("Invalid or expired refresh token");
         }
 
-        Long userId = jwtService.extractUserId(claims);
+        String userId = jwtService.extractUserId(claims);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException("User not found or inactive"));
-
         if (!user.isActive()) {
             throw new BadRequestException("User not found or inactive");
         }
 
-        if (jti != null) {
-            tokenBlacklistService.blacklist(jti);
-        }
+        if (jti != null) tokenBlacklistService.blacklist(jti);
 
         String newAccess = jwtService.generateAccessToken(user.getId(), user.getRole().name());
         String newRefresh = jwtService.generateRefreshToken(user.getId(), user.getRole().name());
-
         return new TokenResponse(newAccess, newRefresh, toUserResponse(user));
     }
 
-    @Transactional
     public void logout(String authHeader, User user, String ipAddress, String userAgent) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             Claims claims = jwtService.validateToken(token);
             if (claims != null) {
                 String jti = jwtService.extractJti(claims);
-                if (jti != null) {
-                    tokenBlacklistService.blacklist(jti);
-                }
+                if (jti != null) tokenBlacklistService.blacklist(jti);
             }
         }
-
-        auditService.logAction(
-                "USER_LOGOUT",
-                "User",
-                user,
-                user != null ? user.getId().toString() : "unknown",
+        auditService.logAction("USER_LOGOUT", "User", user,
+                user != null ? user.getId() : "unknown",
                 user != null ? Map.of("email", user.getEmail()) : Map.of(),
-                ipAddress,
-                userAgent
-        );
+                ipAddress, userAgent);
     }
 
     public UserResponse toUserResponse(User user) {
@@ -302,7 +269,6 @@ public class AuthService {
         res.setUpdatedAt(user.getUpdatedAt());
         res.setDepartment(user.getDepartment());
 
-        // Resolve profileId and department
         if (user.getRole() == UserRole.PATIENT) {
             patientRepository.findByUserId(user.getId())
                     .ifPresent(p -> res.setProfileId(p.getPatientId()));
@@ -310,8 +276,8 @@ public class AuthService {
             doctorRepository.findByUserId(user.getId())
                     .ifPresent(d -> {
                         res.setProfileId(d.getDoctorId());
-                        if (res.getDepartment() == null && d.getDepartment() != null) {
-                            res.setDepartment(d.getDepartment().getName());
+                        if (res.getDepartment() == null && d.getDepartmentName() != null) {
+                            res.setDepartment(d.getDepartmentName());
                         }
                     });
         } else if (user.getRole() == UserRole.NURSE) {
@@ -328,4 +294,3 @@ public class AuthService {
         return res;
     }
 }
-

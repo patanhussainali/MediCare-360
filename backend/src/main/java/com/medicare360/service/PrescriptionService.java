@@ -9,7 +9,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,103 +19,87 @@ import java.util.UUID;
 public class PrescriptionService {
 
     private final PrescriptionRepository prescriptionRepository;
-    private final PrescriptionItemRepository prescriptionItemRepository;
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
     private final AppointmentRepository appointmentRepository;
     private final AuditService auditService;
 
-    public PrescriptionService(
-            PrescriptionRepository prescriptionRepository,
-            PrescriptionItemRepository prescriptionItemRepository,
-            PatientRepository patientRepository,
-            DoctorRepository doctorRepository,
-            AppointmentRepository appointmentRepository,
-            AuditService auditService
-    ) {
+    public PrescriptionService(PrescriptionRepository prescriptionRepository,
+                                PatientRepository patientRepository,
+                                DoctorRepository doctorRepository,
+                                AppointmentRepository appointmentRepository,
+                                AuditService auditService) {
         this.prescriptionRepository = prescriptionRepository;
-        this.prescriptionItemRepository = prescriptionItemRepository;
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.appointmentRepository = appointmentRepository;
         this.auditService = auditService;
     }
 
-    @Transactional(readOnly = true)
-    public List<PrescriptionResponse> getMulti(int skip, int limit, Long patientId, Long doctorId) {
+    public List<PrescriptionResponse> getMulti(int skip, int limit, String patientId, String doctorId) {
         int page = limit > 0 ? skip / limit : 0;
         int size = limit > 0 ? limit : 50;
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
         Page<Prescription> prescriptions = prescriptionRepository.findAll(pageable);
         return prescriptions.getContent().stream()
-                .filter(p -> patientId == null || (p.getPatient() != null && p.getPatient().getId().equals(patientId)))
-                .filter(p -> doctorId == null || (p.getDoctor() != null && p.getDoctor().getId().equals(doctorId)))
+                .filter(p -> patientId == null || patientId.equals(p.getPatientId()))
+                .filter(p -> doctorId == null || doctorId.equals(p.getDoctorId()))
                 .map(this::toResponse)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public PrescriptionResponse getById(Long id) {
+    public PrescriptionResponse getById(String id) {
         Prescription p = prescriptionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Prescription not found"));
         return toResponse(p);
     }
 
-    @Transactional
     public PrescriptionResponse create(PrescriptionCreateRequest req, User currentUser, String ipAddress, String userAgent) {
         Patient patient = patientRepository.findById(req.getPatientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
-
         Doctor doctor = doctorRepository.findById(req.getDoctorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
 
-        Appointment apt = null;
-        if (req.getAppointmentId() != null) {
-            apt = appointmentRepository.findById(req.getAppointmentId()).orElse(null);
-        }
-
         Prescription p = new Prescription();
         p.setPrescriptionNumber("PRESC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase());
-        p.setPatient(patient);
-        p.setDoctor(doctor);
-        p.setAppointment(apt);
+        p.setPatientId(patient.getId());
+        p.setPatientName(patient.getFullName());
+        p.setDoctorId(doctor.getId());
+        p.setDoctorName(doctor.getFullName());
+
+        if (req.getAppointmentId() != null && !req.getAppointmentId().isBlank()) {
+            appointmentRepository.findById(req.getAppointmentId())
+                    .ifPresent(apt -> p.setAppointmentId(apt.getId()));
+        }
+
         p.setDiagnosis(req.getDiagnosis());
         p.setInstructions(req.getInstructions());
         p.setStatus("Active");
-
-        p = prescriptionRepository.save(p);
 
         List<PrescriptionItem> items = new ArrayList<>();
         if (req.getItems() != null) {
             for (PrescriptionItemCreateRequest itemReq : req.getItems()) {
                 PrescriptionItem item = new PrescriptionItem();
-                item.setPrescription(p);
                 item.setMedicineName(itemReq.getMedicineName());
                 item.setDosage(itemReq.getDosage());
                 item.setFrequency(itemReq.getFrequency());
                 item.setDuration(itemReq.getDuration());
                 item.setInstructions(itemReq.getInstructions());
-                items.add(prescriptionItemRepository.save(item));
+                items.add(item);
             }
         }
         p.setItems(items);
 
-        auditService.logAction(
-                "PRESCRIPTION_CREATED",
-                "Prescription",
-                currentUser,
-                p.getId().toString(),
-                Map.of("patient_id", patient.getId(), "items_count", items.size()),
-                ipAddress,
-                userAgent
-        );
+        prescriptionRepository.save(p);
 
+        auditService.logAction("PRESCRIPTION_CREATED", "Prescription", currentUser, p.getId(),
+                Map.of("patient_id", patient.getId(), "items_count", items.size()),
+                ipAddress, userAgent);
         return toResponse(p);
     }
 
-    @Transactional
-    public PrescriptionResponse update(Long id, PrescriptionUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
+    public PrescriptionResponse update(String id, PrescriptionUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
         Prescription p = prescriptionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Prescription not found"));
 
@@ -124,35 +107,25 @@ public class PrescriptionService {
         if (req.getInstructions() != null) p.setInstructions(req.getInstructions());
         if (req.getStatus() != null) p.setStatus(req.getStatus());
 
-        p = prescriptionRepository.save(p);
-
-        auditService.logAction(
-                "PRESCRIPTION_UPDATED",
-                "Prescription",
-                currentUser,
-                p.getId().toString(),
-                Map.of("id", p.getId()),
-                ipAddress,
-                userAgent
-        );
-
+        prescriptionRepository.save(p);
+        auditService.logAction("PRESCRIPTION_UPDATED", "Prescription", currentUser, p.getId(),
+                Map.of("id", p.getId()), ipAddress, userAgent);
         return toResponse(p);
     }
 
-    @Transactional
-    public PrescriptionItemResponse addItem(Long prescriptionId, PrescriptionItemCreateRequest itemReq, User currentUser) {
+    public PrescriptionItemResponse addItem(String prescriptionId, PrescriptionItemCreateRequest itemReq, User currentUser) {
         Prescription p = prescriptionRepository.findById(prescriptionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Prescription not found"));
 
         PrescriptionItem item = new PrescriptionItem();
-        item.setPrescription(p);
         item.setMedicineName(itemReq.getMedicineName());
         item.setDosage(itemReq.getDosage());
         item.setFrequency(itemReq.getFrequency());
         item.setDuration(itemReq.getDuration());
         item.setInstructions(itemReq.getInstructions());
 
-        item = prescriptionItemRepository.save(item);
+        p.getItems().add(item);
+        prescriptionRepository.save(p);
         return toItemResponse(item);
     }
 
@@ -160,32 +133,24 @@ public class PrescriptionService {
         PrescriptionResponse res = new PrescriptionResponse();
         res.setId(p.getId());
         res.setPrescriptionNumber(p.getPrescriptionNumber());
-        if (p.getPatient() != null) {
-            res.setPatientId(p.getPatient().getId());
-            res.setPatientName(p.getPatient().getFullName());
-        }
-        if (p.getDoctor() != null) {
-            res.setDoctorId(p.getDoctor().getId());
-            res.setDoctorName(p.getDoctor().getFullName());
-        }
-        if (p.getAppointment() != null) {
-            res.setAppointmentId(p.getAppointment().getId());
-        }
+        res.setPatientId(p.getPatientId());
+        res.setPatientName(p.getPatientName());
+        res.setDoctorId(p.getDoctorId());
+        res.setDoctorName(p.getDoctorName());
+        res.setAppointmentId(p.getAppointmentId());
         res.setDiagnosis(p.getDiagnosis());
         res.setInstructions(p.getInstructions());
         res.setStatus(p.getStatus());
         res.setCreatedAt(p.getCreatedAt());
         res.setUpdatedAt(p.getUpdatedAt());
-
-        List<PrescriptionItem> items = prescriptionItemRepository.findByPrescription_Id(p.getId());
-        res.setItems(items.stream().map(this::toItemResponse).toList());
-
+        res.setItems(p.getItems() != null
+                ? p.getItems().stream().map(this::toItemResponse).toList()
+                : List.of());
         return res;
     }
 
     public PrescriptionItemResponse toItemResponse(PrescriptionItem item) {
         PrescriptionItemResponse res = new PrescriptionItemResponse();
-        res.setId(item.getId());
         res.setMedicineName(item.getMedicineName());
         res.setDosage(item.getDosage());
         res.setFrequency(item.getFrequency());
@@ -194,4 +159,3 @@ public class PrescriptionService {
         return res;
     }
 }
-

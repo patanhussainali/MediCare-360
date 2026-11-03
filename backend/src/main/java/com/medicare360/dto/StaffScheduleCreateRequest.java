@@ -15,7 +15,7 @@ public class StaffScheduleCreateRequest {
     private String staffType;
 
     @NotNull
-    private Long staffId;
+    private String staffId;
 
     @NotBlank
     private String staffName;

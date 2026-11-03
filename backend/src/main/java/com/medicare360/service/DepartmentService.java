@@ -13,7 +13,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +28,6 @@ public class DepartmentService {
         this.auditService = auditService;
     }
 
-    @Transactional(readOnly = true)
     public List<DepartmentResponse> getMulti(int skip, int limit, Boolean isActive) {
         int page = limit > 0 ? skip / limit : 0;
         int size = limit > 0 ? limit : 50;
@@ -42,14 +40,12 @@ public class DepartmentService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public DepartmentResponse getById(Long id) {
+    public DepartmentResponse getById(String id) {
         Department dept = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found"));
         return toResponse(dept);
     }
 
-    @Transactional
     public DepartmentResponse create(DepartmentCreateRequest req, User currentUser, String ipAddress, String userAgent) {
         boolean exists = departmentRepository.findAll().stream()
                 .anyMatch(d -> d.getName().equalsIgnoreCase(req.getName()));
@@ -78,22 +74,12 @@ public class DepartmentService {
         }
 
         dept = departmentRepository.save(dept);
-
-        auditService.logAction(
-                "DEPARTMENT_CREATED",
-                "Department",
-                currentUser,
-                dept.getId().toString(),
-                Map.of("name", dept.getName(), "code", dept.getCode()),
-                ipAddress,
-                userAgent
-        );
-
+        auditService.logAction("DEPARTMENT_CREATED", "Department", currentUser, dept.getId(),
+                Map.of("name", dept.getName(), "code", dept.getCode()), ipAddress, userAgent);
         return toResponse(dept);
     }
 
-    @Transactional
-    public DepartmentResponse update(Long id, DepartmentUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
+    public DepartmentResponse update(String id, DepartmentUpdateRequest req, User currentUser, String ipAddress, String userAgent) {
         Department dept = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found"));
 
@@ -111,17 +97,8 @@ public class DepartmentService {
         }
 
         dept = departmentRepository.save(dept);
-
-        auditService.logAction(
-                "DEPARTMENT_UPDATED",
-                "Department",
-                currentUser,
-                dept.getId().toString(),
-                Map.of("id", dept.getId()),
-                ipAddress,
-                userAgent
-        );
-
+        auditService.logAction("DEPARTMENT_UPDATED", "Department", currentUser, dept.getId(),
+                Map.of("id", dept.getId()), ipAddress, userAgent);
         return toResponse(dept);
     }
 
@@ -139,4 +116,3 @@ public class DepartmentService {
         return res;
     }
 }
-

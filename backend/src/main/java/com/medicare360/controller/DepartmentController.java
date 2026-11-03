@@ -58,14 +58,14 @@ public class DepartmentController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DepartmentResponse> getDepartment(@PathVariable("id") Long id) {
+    public ResponseEntity<DepartmentResponse> getDepartment(@PathVariable("id") String id) {
         return ResponseEntity.ok(departmentService.getById(id));
     }
 
     @RequestMapping(value = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<DepartmentResponse> updateDepartment(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @RequestBody DepartmentUpdateRequest req,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request

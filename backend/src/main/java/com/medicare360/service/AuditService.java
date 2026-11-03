@@ -9,9 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -27,7 +25,6 @@ public class AuditService {
         this.objectMapper = objectMapper;
     }
 
-    @Transactional
     public void logAction(String action, String resource, User user, String resourceId, Object details, String ipAddress, String userAgent) {
         AuditLog log = new AuditLog();
         log.setAction(action);
@@ -37,7 +34,7 @@ public class AuditService {
         log.setUserAgent(userAgent);
 
         if (user != null) {
-            log.setUser(user);
+            log.setUserId(user.getId());
             log.setUserEmail(user.getEmail());
             log.setUserName(user.getFullName());
         } else {
@@ -45,8 +42,8 @@ public class AuditService {
         }
 
         if (details != null) {
-            if (details instanceof String) {
-                log.setDetails((String) details);
+            if (details instanceof String s) {
+                log.setDetails(s);
             } else {
                 try {
                     log.setDetails(objectMapper.writeValueAsString(details));
@@ -59,33 +56,26 @@ public class AuditService {
         auditLogRepository.save(log);
     }
 
-    @Transactional(readOnly = true)
     public List<AuditLogResponse> getLogs(int skip, int limit, String action, String resource) {
         int page = limit > 0 ? skip / limit : 0;
         int size = limit > 0 ? limit : 50;
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        Specification<AuditLog> spec = (root, query, cb) -> {
-            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
-            if (action != null && !action.isBlank()) {
-                predicates.add(cb.equal(root.get("action"), action));
-            }
-            if (resource != null && !resource.isBlank()) {
-                predicates.add(cb.equal(root.get("resource"), resource));
-            }
-            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
-        };
-
-        Page<AuditLog> logs = auditLogRepository.findAll(spec, pageable);
+        Page<AuditLog> logs;
+        if (action != null && !action.isBlank()) {
+            logs = auditLogRepository.findByAction(action, pageable);
+        } else if (resource != null && !resource.isBlank()) {
+            logs = auditLogRepository.findByResource(resource, pageable);
+        } else {
+            logs = auditLogRepository.findAll(pageable);
+        }
         return logs.getContent().stream().map(this::toResponse).toList();
     }
 
     private AuditLogResponse toResponse(AuditLog log) {
         AuditLogResponse res = new AuditLogResponse();
         res.setId(log.getId());
-        if (log.getUser() != null) {
-            res.setUserId(log.getUser().getId());
-        }
+        res.setUserId(log.getUserId());
         res.setUserEmail(log.getUserEmail());
         res.setUserName(log.getUserName());
         res.setAction(log.getAction());
@@ -105,4 +95,3 @@ public class AuditService {
         return res;
     }
 }
-

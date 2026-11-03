@@ -63,14 +63,14 @@ public class PatientController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<PatientResponse> getPatient(@PathVariable("id") Long id) {
+    public ResponseEntity<PatientResponse> getPatient(@PathVariable("id") String id) {
         return ResponseEntity.ok(patientService.getById(id));
     }
 
     @RequestMapping(value = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('RECEPTIONIST') or hasAuthority('DOCTOR') or hasAuthority('NURSE')")
     public ResponseEntity<PatientResponse> updatePatient(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @Valid @RequestBody PatientUpdateRequest req,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request
@@ -82,7 +82,7 @@ public class PatientController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> deletePatient(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request
     ) {

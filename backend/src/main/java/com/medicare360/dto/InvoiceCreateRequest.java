@@ -11,9 +11,9 @@ import java.util.List;
 @NoArgsConstructor
 public class InvoiceCreateRequest {
 
-    private Long patientId;
+    private String patientId;
 
-    private Long appointmentId;
+    private String appointmentId;
 
     private String description;
 

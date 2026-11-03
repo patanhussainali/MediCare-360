@@ -58,14 +58,14 @@ public class PharmacyController {
 
     @GetMapping("/medicines/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<MedicineResponse> getMedicine(@PathVariable("id") Long id) {
+    public ResponseEntity<MedicineResponse> getMedicine(@PathVariable("id") String id) {
         return ResponseEntity.ok(pharmacyService.getMedicineById(id));
     }
 
     @RequestMapping(value = "/medicines/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('PHARMACIST')")
     public ResponseEntity<MedicineResponse> updateMedicine(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @RequestBody MedicineUpdateRequest req,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request
@@ -77,7 +77,7 @@ public class PharmacyController {
     @PatchMapping("/medicines/{id}/stock")
     @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('PHARMACIST')")
     public ResponseEntity<MedicineResponse> updateStock(
-            @PathVariable("id") Long id,
+            @PathVariable("id") String id,
             @RequestBody MedicineStockUpdateRequest req,
             @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest request

@@ -1,49 +1,47 @@
 package com.medicare360.entity;
 
 import com.medicare360.common.BaseEntity;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-@Entity
-@Table(name = "medicines")
+@Document(collection = "medicines")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Medicine extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(unique = true, length = 50)
+    @Indexed(unique = true)
     private String code;
 
-    @Column(unique = true, length = 255)
+    @Indexed(unique = true)
     private String name;
 
-    @Column(name = "generic_name", length = 255)
+    @Field("generic_name")
     private String genericName;
 
-    @Column(length = 100)
     private String category;
 
-    @Column(length = 255)
     private String manufacturer;
 
-    @Column(name = "unit_price")
+    @Field("unit_price")
     private double unitPrice = 0.0;
 
-    @Column(name = "stock_quantity")
+    @Field("stock_quantity")
     private int stockQuantity = 0;
 
-    @Column(name = "min_stock_threshold")
+    @Field("min_stock_threshold")
     private int minStockThreshold = 10;
 
-    @Column(name = "expiry_date", length = 50)
+    @Field("expiry_date")
     private String expiryDate;
 
-    @Column(length = 50)
     private String status = "Available";
 }
