@@ -86,6 +86,19 @@ export default {
           800: '#117A1A', 900: '#0E5F18', 950: '#083A10',
         },
 
+        // Legacy cyan/teal utility classes now follow the brand green so older
+        // portal screens keep the same accent as the shared navigation.
+        teal: {
+          50: '#ECFDEE', 100: '#D6FAD9', 200: '#B0F4B6', 300: '#7BEB84',
+          400: '#4FE65A', 500: '#22E62C', 600: '#19C923', 700: '#149D1C',
+          800: '#117A1A', 900: '#0E5F18', 950: '#083A10',
+        },
+        cyan: {
+          50: '#ECFDEE', 100: '#D6FAD9', 200: '#B0F4B6', 300: '#7BEB84',
+          400: '#4FE65A', 500: '#22E62C', 600: '#19C923', 700: '#149D1C',
+          800: '#117A1A', 900: '#0E5F18', 950: '#083A10',
+        },
+
         // Chart 2 Orange mapping
         amber: {
           50: '#FBF5E8',

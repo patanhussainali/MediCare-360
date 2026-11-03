@@ -199,7 +199,7 @@ const Login = () => {
             title="Switch Background Image"
             className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-md text-slate-800 dark:text-slate-100 text-xs font-semibold shadow-md hover:bg-white dark:hover:bg-slate-800 transition-all border border-white/20"
           >
-            <ImageIcon className="w-4 h-4 text-[#087f8c] dark:text-teal-400" />
+            <ImageIcon className="w-4 h-4 text-[#19C923] dark:text-teal-400" />
             <span>BG: {currentBg.label}</span>
           </button>
 
@@ -219,7 +219,7 @@ const Login = () => {
             </div>
             <div className="text-left">
               <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white">
-                MediCare<span className="text-[#087f8c] dark:text-teal-400">360</span>
+                MediCare<span className="text-[#19C923] dark:text-teal-400">360</span>
               </span>
             </div>
           </div>
@@ -231,7 +231,7 @@ const Login = () => {
         <div className="w-full max-w-7xl mx-auto flex items-center px-4 sm:px-6 py-6 lg:py-10">
 
           {/* Curved Teal Framing Panel (Exact layout from 2nd reference image) */}
-          <div className="w-full lg:w-[500px] xl:w-[540px] bg-[#0c6b73]/95 dark:bg-[#08484e]/95 backdrop-blur-md rounded-3xl lg:rounded-tr-[100px] lg:rounded-br-3xl shadow-2xl p-6 sm:p-10 flex flex-col justify-center border border-teal-500/30">
+          <div className="w-full lg:w-[500px] xl:w-[540px] bg-[#102719]/95 dark:bg-[#0B1D11]/95 backdrop-blur-md rounded-3xl lg:rounded-tr-[100px] lg:rounded-br-3xl shadow-2xl p-6 sm:p-10 flex flex-col justify-center border border-teal-500/30">
 
             {/* Inner White Card */}
             <div className="w-full bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 dark:border-slate-800 transition-all">
@@ -242,7 +242,7 @@ const Login = () => {
                   SIGN IN
                 </h1>
                 <div className="flex items-center justify-center gap-2 mt-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#087f8c] animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#19C923] animate-pulse" />
                   <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                     {currentConfig.portalTitle}
                   </p>
@@ -265,16 +265,16 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white font-semibold text-sm shadow-sm hover:border-[#087f8c] transition-all focus:outline-none focus:ring-2 focus:ring-[#087f8c]/40"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white font-semibold text-sm shadow-sm hover:border-[#19C923] transition-all focus:outline-none focus:ring-2 focus:ring-[#19C923]/40"
                 >
                   <div className="flex items-center gap-2.5">
-                    <RoleIcon className="w-4 h-4 text-[#087f8c] dark:text-teal-400" />
+                    <RoleIcon className="w-4 h-4 text-[#19C923] dark:text-teal-400" />
                     <span>{currentConfig.label}</span>
                     <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
                       {currentConfig.badge}
                     </span>
                   </div>
-                  <div className="w-6 h-6 rounded-full bg-[#087f8c] text-white flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-full bg-[#19C923] text-white flex items-center justify-center">
                     <ChevronDown className={`w-3.5 h-3.5 transform transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} />
                   </div>
                 </button>
@@ -295,7 +295,7 @@ const Login = () => {
                           }}
                           className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                             isSelected
-                              ? 'bg-teal-50 dark:bg-teal-900/40 text-[#087f8c] dark:text-teal-300'
+                              ? 'bg-teal-50 dark:bg-teal-900/40 text-[#19C923] dark:text-teal-300'
                               : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60'
                           }`}
                         >
@@ -304,7 +304,7 @@ const Login = () => {
                             <span>{r.label}</span>
                             <span className="text-[10px] text-slate-400 font-normal">({r.badge})</span>
                           </div>
-                          {isSelected && <Check className="w-4 h-4 text-[#087f8c]" />}
+                          {isSelected && <Check className="w-4 h-4 text-[#19C923]" />}
                         </button>
                       );
                     })}
@@ -325,7 +325,7 @@ const Login = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Username / Email"
-                      className="w-full px-4 py-3 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#087f8c] focus:border-[#087f8c] text-slate-900 dark:text-white placeholder-slate-400 shadow-sm transition-all"
+                      className="w-full px-4 py-3 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#19C923] focus:border-[#19C923] text-slate-900 dark:text-white placeholder-slate-400 shadow-sm transition-all"
                     />
                     <Mail className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
@@ -342,7 +342,7 @@ const Login = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Password"
-                      className="w-full px-4 py-3 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#087f8c] focus:border-[#087f8c] text-slate-900 dark:text-white placeholder-slate-400 shadow-sm transition-all"
+                      className="w-full px-4 py-3 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#19C923] focus:border-[#19C923] text-slate-900 dark:text-white placeholder-slate-400 shadow-sm transition-all"
                     />
                     <button
                       type="button"
@@ -359,7 +359,7 @@ const Login = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 py-3 px-6 bg-[#087f8c] hover:bg-[#066a75] active:scale-[0.98] text-white font-bold text-sm rounded-xl shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 py-3 px-6 bg-[#19C923] hover:bg-[#149D1C] active:scale-[0.98] text-white font-bold text-sm rounded-xl shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <span className="flex items-center gap-2">
@@ -372,7 +372,7 @@ const Login = () => {
 
                   <Link
                     to="/forgot-password"
-                    className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-[#087f8c] dark:hover:text-teal-400 transition-colors whitespace-nowrap"
+                    className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-[#19C923] dark:hover:text-teal-400 transition-colors whitespace-nowrap"
                   >
                     Forgot Password?
                   </Link>
@@ -395,7 +395,7 @@ const Login = () => {
                       }}
                       className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all ${
                         role === r.id
-                          ? 'bg-[#087f8c] text-white shadow-sm'
+                          ? 'bg-[#19C923] text-white shadow-sm'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                       }`}
                     >
@@ -410,7 +410,7 @@ const Login = () => {
                 <span>Need a patient account?</span>
                 <Link
                   to="/register"
-                  className="font-bold text-[#087f8c] dark:text-teal-400 hover:underline flex items-center gap-1"
+                  className="font-bold text-[#19C923] dark:text-teal-400 hover:underline flex items-center gap-1"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   Register Now
@@ -424,7 +424,7 @@ const Login = () => {
           <div className="hidden lg:flex flex-1 flex-col justify-end items-end p-8 text-right text-white">
             <div className="bg-slate-900/60 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-2xl max-w-sm">
               <div className="flex items-center justify-end gap-2 text-teal-300 text-xs font-bold mb-1">
-                <span className="w-2 h-2 rounded-full bg-[#758F62] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-[#22E62C] animate-pulse" />
                 Hospital Management &amp; Clinical Care
               </div>
               <p className="text-sm font-extrabold text-white">

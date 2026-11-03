@@ -184,7 +184,7 @@ const Landing = () => {
               <div className="pt-4 flex flex-wrap items-center gap-4">
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#087f8c] hover:bg-[#066a75] text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition-all"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#19C923] hover:bg-[#149D1C] text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition-all"
                 >
                   Access Workstation Portal
                   <ArrowRight className="w-4 h-4" />

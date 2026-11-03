@@ -160,7 +160,7 @@
 ::-webkit-scrollbar-track  { background: #EEF1F2; }
 .dark ::-webkit-scrollbar-track { background: #151819; }
 ::-webkit-scrollbar-thumb  { background: #C5CCCE; border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: #22C92C; }
+::-webkit-scrollbar-thumb:hover { background: #22E62C; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
