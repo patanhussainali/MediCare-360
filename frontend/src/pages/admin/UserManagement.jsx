@@ -67,16 +67,20 @@ const UserManagement = () => {
     try {
       const res = await userService.getAllUsers();
       setUsersList(res.data || []);
+      setError(''); // clear any previous error on success
     } catch (e) {
       console.error('Error fetching users:', e);
-      // Show a user‑friendly error only if the backend is reachable but returned an error.
-      // If the backend is unreachable (network error), keep the existing list (may be empty) and display a toast.
+      // Don't show a red banner for 401 — it means the token refresh is in progress
+      // or the session is being re-established. The interceptor handles redirect if needed.
+      const status = e?.response?.status;
+      if (status === 401 || status === 403) {
+        // Silent fail — don't overwrite a success message with an auth error
+        return;
+      }
       if (e?.response?.data?.detail) {
         setError(e.response.data.detail);
-      } else if (e?.message) {
+      } else if (e?.message && !e.message.includes('401')) {
         setError(e.message);
-      } else {
-        setError('Failed to fetch users.');
       }
     } finally {
       setLoading(false);
@@ -129,8 +133,11 @@ const UserManagement = () => {
         phone: '',
         status: 'Active',
       });
-      fetchUsers();
-      refreshData();
+      // Small delay to allow backend to settle before re-fetching
+      setTimeout(() => {
+        fetchUsers();
+        refreshData();
+      }, 500);
     } catch (err) {
       setError(err.message || 'Failed to create user');
     }

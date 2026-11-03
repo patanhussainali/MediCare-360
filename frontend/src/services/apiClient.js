@@ -172,11 +172,14 @@ axiosInstance.interceptors.response.use(
     // If no refresh token exists, do not leave the user in a portal with a
     // rejected session. Clear the stale credentials and return to sign-in.
     if (error.response?.status === 401 && !isPublicAuthRequest) {
-      removeItem(STORAGE_KEYS.CURRENT_USER);
-      removeItem(STORAGE_KEYS.TOKEN);
-      removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      const hasRefreshToken = !!getItem(STORAGE_KEYS.REFRESH_TOKEN, null);
+      if (!hasRefreshToken) {
+        removeItem(STORAGE_KEYS.CURRENT_USER);
+        removeItem(STORAGE_KEYS.TOKEN);
+        removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
 
