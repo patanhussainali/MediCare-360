@@ -13,6 +13,7 @@ const normalizePatient = p => ({
   dbId: p.id,
   patientId: p.patient_id || p.patientId || `PAT-${p.id}`,
   userId: p.user_id ?? p.userId,
+  userCode: p.user_code || p.userCode || '',
   name: p.full_name || p.fullName || p.name,
   email: p.email,
   phone: p.phone,
@@ -32,16 +33,24 @@ const normalizePatient = p => ({
 });
 
 export const patientService = {
-  async getAllPatients() {
+  async getAllPatients(search = '') {
     try {
-      const response = await axiosInstance.get('/patients');
+      const params = new URLSearchParams({ limit: 50 });
+      if (search.trim()) params.set('search', search.trim());
+      const response = await axiosInstance.get(`/patients?${params.toString()}`);
       const normalized = (response.data || []).map(normalizePatient);
-      setItem(STORAGE_KEYS.PATIENTS, normalized);
+      if (!search.trim()) setItem(STORAGE_KEYS.PATIENTS, normalized);
       return { success: true, data: normalized };
     } catch (err) {
       const local = getItem(STORAGE_KEYS.PATIENTS, []);
       return { success: true, data: local };
     }
+  },
+
+  async searchPatients(query) {
+    const value = String(query || '').trim();
+    if (value.length < 2) return { success: true, data: [] };
+    return this.getAllPatients(value);
   },
 
   async getMyProfile() {

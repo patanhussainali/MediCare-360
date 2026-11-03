@@ -185,17 +185,17 @@ const DoctorManagement = () => {
 
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Clinical Department</label>
-              <select
+              <input
+                list="clinical-department-options"
+                placeholder="Select or type a clinical department"
                 value={form.department}
                 required
                 onChange={e => setForm({ ...form, department: e.target.value, specialization: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 transition"
-              >
-                <option value="">Select Department...</option>
-                {getAssignmentsForRole('DOCTOR').map(dept => (
-                  <option key={dept} value={dept}>{dept}</option>
-                ))}
-              </select>
+              />
+              <datalist id="clinical-department-options">
+                {[...new Set([...departments.map(dept => dept.name), ...getAssignmentsForRole('DOCTOR')])].map(dept => <option key={dept} value={dept} />)}
+              </datalist>
             </div>
 
             <div>

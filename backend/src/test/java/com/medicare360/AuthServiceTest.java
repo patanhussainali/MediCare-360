@@ -11,6 +11,8 @@ import com.medicare360.security.JwtService;
 import com.medicare360.security.TokenBlacklistService;
 import com.medicare360.service.AuditService;
 import com.medicare360.service.AuthService;
+import com.medicare360.service.DepartmentService;
+import com.medicare360.service.UserCodeGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +42,8 @@ class AuthServiceTest {
     @Mock private JwtService jwtService;
     @Mock private TokenBlacklistService tokenBlacklistService;
     @Mock private AuditService auditService;
+    @Mock private UserCodeGenerator userCodeGenerator;
+    @Mock private DepartmentService departmentService;
 
     @InjectMocks
     private AuthService authService;
@@ -56,21 +60,6 @@ class AuthServiceTest {
         sampleUser.setHashedPassword("hashedPassword123");
         sampleUser.setActive(true);
         sampleUser.setVerified(true);
-    }
-
-    @Test
-    void testCheckAdminExists_True() {
-        User admin = new User();
-        admin.setRole(UserRole.ADMIN);
-        admin.setActive(true);
-        when(userRepository.findAll()).thenReturn(List.of(admin));
-        assertTrue(authService.checkAdminExists());
-    }
-
-    @Test
-    void testCheckAdminExists_False() {
-        when(userRepository.findAll()).thenReturn(List.of(sampleUser));
-        assertFalse(authService.checkAdminExists());
     }
 
     @Test

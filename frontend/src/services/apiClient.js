@@ -82,7 +82,7 @@ export const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use((config) => {
   config.baseURL = getApiBaseUrl();
   const token = getItem(STORAGE_KEYS.TOKEN, null);
-  const isPublicAuthRequest = /\/auth\/(login|login\/form|setup-admin|register|refresh|check-admin)/.test(config.url || '');
+  const isPublicAuthRequest = /\/auth\/(login|login\/form|register|refresh)/.test(config.url || '');
   if (typeof token === 'string' && token.startsWith('demo_jwt_token_')) {
     removeItem(STORAGE_KEYS.CURRENT_USER);
     removeItem(STORAGE_KEYS.TOKEN);
@@ -120,7 +120,7 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-    const isPublicAuthRequest = /\/auth\/(login|login\/form|setup-admin|register|refresh|check-admin)/.test(originalRequest?.url || '');
+    const isPublicAuthRequest = /\/auth\/(login|login\/form|register|refresh)/.test(originalRequest?.url || '');
 
     // Auto-refresh on 401 (token expired)
     if (error.response?.status === 401 && !originalRequest._retry) {

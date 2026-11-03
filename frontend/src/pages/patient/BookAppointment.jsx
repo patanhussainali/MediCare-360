@@ -39,6 +39,17 @@ const BookAppointment = () => {
     '03:00 PM', '03:30 PM', '04:00 PM'
   ];
 
+  const todayInHospital = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+  const isPastSlot = (slot) => {
+    if (!appointmentDate) return false;
+    const [clock, meridiem] = slot.split(' ');
+    let [hours, minutes] = clock.split(':').map(Number);
+    if (meridiem === 'PM' && hours !== 12) hours += 12;
+    if (meridiem === 'AM' && hours === 12) hours = 0;
+    const slotTime = new Date(`${appointmentDate}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00+05:30`);
+    return slotTime.getTime() <= Date.now();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -164,9 +175,9 @@ const BookAppointment = () => {
                 <input
                   type="date"
                   required
-                  min={new Date().toISOString().split('T')[0]}
+                  min={todayInHospital}
                   value={appointmentDate}
-                  onChange={(e) => setAppointmentDate(e.target.value)}
+                  onChange={(e) => { setAppointmentDate(e.target.value); setTimeSlot(''); }}
                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:border-hospital-500"
                 />
               </div>
@@ -192,18 +203,27 @@ const BookAppointment = () => {
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">5. Available Time Slot</label>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                 {availableSlots.map((slot) => (
+                  (() => {
+                    const expired = isPastSlot(slot);
+                    return (
                   <button
                     key={slot}
                     type="button"
                     onClick={() => setTimeSlot(slot)}
+                    disabled={expired}
+                    title={expired ? 'This time slot has passed' : undefined}
                     className={`py-2 px-3 text-xs font-bold rounded-xl border transition-all ${
-                      timeSlot === slot
+                      expired
+                        ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                        : timeSlot === slot
                         ? 'bg-hospital-600 text-white border-hospital-600 shadow-soft'
                         : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-hospital-400'
                     }`}
                   >
                     {slot}
                   </button>
+                    );
+                  })()
                 ))}
               </div>
             </div>

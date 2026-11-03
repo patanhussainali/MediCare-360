@@ -20,6 +20,12 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 @Service
 public class AppointmentService {
@@ -64,6 +70,7 @@ public class AppointmentService {
     }
 
     public AppointmentResponse create(AppointmentCreateRequest req, User currentUser, String ipAddress, String userAgent) {
+        validateNotExpired(req.getAppointmentDate(), req.getAppointmentTime());
         Patient patient = patientRepository.findById(req.getPatientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
         Doctor doctor = doctorRepository.findById(req.getDoctorId())
@@ -123,6 +130,31 @@ public class AppointmentService {
         }
 
         return toResponse(apt);
+    }
+
+    private void validateNotExpired(String dateValue, String timeValue) {
+        try {
+            String date = dateValue == null ? "" : dateValue.trim();
+            String time = timeValue == null ? "" : timeValue.trim();
+            if (date.contains("T")) {
+                String[] parts = date.split("T", 2);
+                date = parts[0];
+                if (time.isBlank()) time = parts[1];
+            }
+            LocalDate appointmentDate = LocalDate.parse(date);
+            LocalTime appointmentTime;
+            try {
+                appointmentTime = LocalTime.parse(time, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.ENGLISH));
+            } catch (DateTimeParseException ignored) {
+                appointmentTime = LocalTime.parse(time);
+            }
+            ZoneId hospitalZone = ZoneId.of("Asia/Kolkata");
+            if (!LocalDateTime.of(appointmentDate, appointmentTime).isAfter(LocalDateTime.now(hospitalZone))) {
+                throw new BadRequestException("This appointment time has passed. Please choose a future time slot.");
+            }
+        } catch (DateTimeParseException | NullPointerException ex) {
+            throw new BadRequestException("Please provide a valid appointment date and time.");
+        }
     }
 
     public AppointmentResponse update(String id, AppointmentUpdateRequest req, User currentUser, String ipAddress, String userAgent) {

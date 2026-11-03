@@ -23,6 +23,10 @@ public class User extends BaseEntity {
     @Indexed(unique = true)
     private String email;
 
+    @Indexed(unique = true, sparse = true)
+    @Field("user_code")
+    private String userCode;
+
     @Field("hashed_password")
     private String hashedPassword;
 

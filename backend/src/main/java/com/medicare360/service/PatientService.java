@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 public class PatientService {
@@ -31,13 +32,15 @@ public class PatientService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
+    private final UserCodeGenerator userCodeGenerator;
 
     public PatientService(PatientRepository patientRepository, UserRepository userRepository,
-                          PasswordEncoder passwordEncoder, AuditService auditService) {
+                          PasswordEncoder passwordEncoder, AuditService auditService, UserCodeGenerator userCodeGenerator) {
         this.patientRepository = patientRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.auditService = auditService;
+        this.userCodeGenerator = userCodeGenerator;
     }
 
     public static String generateMrn() {
@@ -53,7 +56,15 @@ public class PatientService {
 
         Page<Patient> patients;
         if (search != null && !search.isBlank()) {
-            patients = patientRepository.searchPatients(search.trim(), pageable);
+            patients = patientRepository.searchPatients(Pattern.quote(search.trim()), pageable);
+            User codeMatch = userRepository.findByUserCodeIgnoreCase(search.trim()).orElse(null);
+            if (codeMatch != null && codeMatch.getRole() == UserRole.PATIENT) {
+                Patient codePatient = patientRepository.findByUserId(codeMatch.getId()).orElse(null);
+                if (codePatient != null && patients.getContent().stream().noneMatch(p -> p.getId().equals(codePatient.getId()))) {
+                    return java.util.stream.Stream.concat(patients.getContent().stream(), java.util.stream.Stream.of(codePatient))
+                            .map(this::toResponse).toList();
+                }
+            }
         } else {
             patients = patientRepository.findAll(pageable);
         }
@@ -109,6 +120,7 @@ public class PatientService {
                 ? req.getPassword() : UUID.randomUUID().toString().substring(0, 12);
 
         User user = new User();
+        user.setUserCode(userCodeGenerator.nextCode());
         user.setEmail(cleanEmail);
         user.setHashedPassword(passwordEncoder.encode(password));
         user.setFullName(req.getFullName());
@@ -175,6 +187,9 @@ public class PatientService {
         res.setId(p.getId());
         res.setPatientId(p.getPatientId());
         res.setUserId(p.getUserId());
+        if (p.getUserId() != null) {
+            userRepository.findById(p.getUserId()).ifPresent(user -> res.setUserCode(user.getUserCode()));
+        }
         res.setFullName(p.getFullName());
         res.setGender(p.getGender());
         res.setDateOfBirth(p.getDateOfBirth());

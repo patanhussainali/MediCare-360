@@ -7,7 +7,6 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [hasAdmin, setHasAdmin] = useState(false);
 
   const refreshAuth = async () => {
     // Initialize non-auth localStorage keys (system settings, audit logs, etc.)
@@ -26,9 +25,6 @@ export const AuthProvider = ({ children }) => {
       setCurrentUser(storedUser);
     }
 
-    // Check backend for admin existence (drives first-run setup UI)
-    const adminCheck = await authService.checkAdminStatus();
-    setHasAdmin(adminCheck.data?.hasAdmin || false);
     setLoading(false);
   };
 
@@ -40,14 +36,6 @@ export const AuthProvider = ({ children }) => {
     const res = await authService.login(email, password, role);
     if (res.success) {
       setCurrentUser(res.data.user);
-    }
-    return res;
-  };
-
-  const setupMasterAdmin = async (adminData) => {
-    const res = await authService.setupMasterAdmin(adminData);
-    if (res.success) {
-      setHasAdmin(true);
     }
     return res;
   };
@@ -65,9 +53,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider value={{
       currentUser,
       loading,
-      hasAdmin,
       login,
-      setupMasterAdmin,
       registerPatient,
       logout,
       refreshAuth,

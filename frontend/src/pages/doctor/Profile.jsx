@@ -11,6 +11,7 @@ const DoctorProfile = () => {
   const doctor = doctors.find(d => d.userId === currentUser?.id || d.id === currentUser?.profileId) || {
     name: currentUser?.name || 'Dr. Physician',
     email: currentUser?.email || '',
+    phone: currentUser?.phone || '',
     department: currentUser?.department || 'General Healthcare',
     specialization: 'General Medicine',
     qualification: 'MD, MBBS',
@@ -47,6 +48,14 @@ const DoctorProfile = () => {
           <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-700">
             <span className="text-slate-400 font-medium">Email Address</span>
             <p className="text-sm font-bold text-slate-800 dark:text-white mt-1">{doctor.email}</p>
+          </div>
+          <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-700">
+            <span className="text-slate-400 font-medium">Mobile Number</span>
+            <p className="text-sm font-bold text-slate-800 dark:text-white mt-1">{doctor.phone || currentUser?.phone || 'Not provided'}</p>
+          </div>
+          <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-700">
+            <span className="text-slate-400 font-medium">User ID</span>
+            <p className="text-sm font-bold font-mono text-slate-800 dark:text-white mt-1">{currentUser?.userCode || currentUser?.id}</p>
           </div>
         </div>
       </div>

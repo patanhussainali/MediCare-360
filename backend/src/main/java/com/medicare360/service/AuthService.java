@@ -32,6 +32,8 @@ public class AuthService {
     private final JwtService jwtService;
     private final TokenBlacklistService tokenBlacklistService;
     private final AuditService auditService;
+    private final UserCodeGenerator userCodeGenerator;
+    private final DepartmentService departmentService;
 
     public AuthService(
             UserRepository userRepository,
@@ -44,7 +46,9 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             TokenBlacklistService tokenBlacklistService,
-            AuditService auditService
+            AuditService auditService,
+            UserCodeGenerator userCodeGenerator,
+            DepartmentService departmentService
     ) {
         this.userRepository = userRepository;
         this.patientRepository = patientRepository;
@@ -57,11 +61,8 @@ public class AuthService {
         this.jwtService = jwtService;
         this.tokenBlacklistService = tokenBlacklistService;
         this.auditService = auditService;
-    }
-
-    public boolean checkAdminExists() {
-        return userRepository.findAll().stream()
-                .anyMatch(u -> u.getRole() == UserRole.ADMIN && u.isActive());
+        this.userCodeGenerator = userCodeGenerator;
+        this.departmentService = departmentService;
     }
 
     public User registerUser(String email, String password, String fullName, UserRole role,
@@ -75,12 +76,16 @@ public class AuthService {
         }
 
         User user = new User();
+        user.setUserCode(userCodeGenerator.nextCode());
         user.setEmail(cleanEmail);
         user.setHashedPassword(passwordEncoder.encode(password));
         user.setFullName(fullName);
         user.setRole(role != null ? role : UserRole.PATIENT);
         user.setPhone(phone);
         user.setDepartment(role == UserRole.PATIENT ? null : departmentName);
+        if (role != UserRole.PATIENT && departmentName != null && !departmentName.isBlank()) {
+            departmentService.findOrCreateByName(departmentName);
+        }
         user.setActive(true);
         user.setVerified(true);
         user = userRepository.save(user);
@@ -98,15 +103,7 @@ public class AuthService {
             patientRepository.save(patient);
         } else if (user.getRole() == UserRole.DOCTOR) {
             // Find department by name
-            Department dept = null;
-            if (departmentName != null && !departmentName.isBlank()) {
-                dept = departmentRepository.findAll().stream()
-                        .filter(d -> d.getName().toLowerCase().contains(departmentName.toLowerCase()))
-                        .findFirst().orElse(null);
-            }
-            if (dept == null) {
-                dept = departmentRepository.findAll().stream().findFirst().orElse(null);
-            }
+            Department dept = departmentService.findOrCreateByName(departmentName);
 
             Doctor doctor = new Doctor();
             doctor.setDoctorId("DOC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase());
@@ -116,7 +113,7 @@ public class AuthService {
                 doctor.setDepartmentId(dept.getId());
                 doctor.setDepartmentName(dept.getName());
             }
-            doctor.setSpecialization(dept != null ? dept.getName() : "General Medicine");
+            doctor.setSpecialization(dept != null ? dept.getName() : (departmentName != null ? departmentName : "General Medicine"));
             doctor.setQualification("MD, MBBS");
             doctor.setExperienceYears(5);
             doctor.setConsultationFee(120.0);
@@ -162,17 +159,6 @@ public class AuthService {
                 Map.of("email", user.getEmail(), "role", user.getRole().name()),
                 ipAddress, userAgent);
         return user;
-    }
-
-    public TokenResponse setupAdmin(String email, String password, String fullName, String phone,
-                                    String ipAddress, String userAgent) {
-        if (checkAdminExists()) {
-            throw new BadRequestException("System administrator account is already configured.");
-        }
-        User admin = registerUser(email, password, fullName, UserRole.ADMIN, phone, null, ipAddress, userAgent);
-        String access = jwtService.generateAccessToken(admin.getId(), admin.getRole().name());
-        String refresh = jwtService.generateRefreshToken(admin.getId(), admin.getRole().name());
-        return new TokenResponse(access, refresh, toUserResponse(admin));
     }
 
     public UserResponse registerPatient(RegisterRequest req, String ipAddress, String userAgent) {
@@ -258,6 +244,7 @@ public class AuthService {
     public UserResponse toUserResponse(User user) {
         UserResponse res = new UserResponse();
         res.setId(user.getId());
+        res.setUserCode(user.getUserCode());
         res.setEmail(user.getEmail());
         res.setFullName(user.getFullName());
         res.setRole(user.getRole() != null ? user.getRole().name() : "PATIENT");

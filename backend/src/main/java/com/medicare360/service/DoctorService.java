@@ -32,14 +32,19 @@ public class DoctorService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
+    private final UserCodeGenerator userCodeGenerator;
+    private final DepartmentService departmentService;
 
     public DoctorService(DoctorRepository doctorRepository, DepartmentRepository departmentRepository,
-                         UserRepository userRepository, PasswordEncoder passwordEncoder, AuditService auditService) {
+                         UserRepository userRepository, PasswordEncoder passwordEncoder, AuditService auditService,
+                         UserCodeGenerator userCodeGenerator, DepartmentService departmentService) {
         this.doctorRepository = doctorRepository;
         this.departmentRepository = departmentRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.auditService = auditService;
+        this.userCodeGenerator = userCodeGenerator;
+        this.departmentService = departmentService;
     }
 
     public List<DoctorResponse> getMulti(int skip, int limit, String departmentId, Boolean isAvailable) {
@@ -80,18 +85,14 @@ public class DoctorService {
         }
         if (dept == null) {
             String requestedDepartment = req.getDepartment() != null ? req.getDepartment() : req.getSpecialization();
-            if (requestedDepartment != null) {
-                String norm = requestedDepartment.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
-                dept = departmentRepository.findAll().stream()
-                        .filter(d -> d.getName().replaceAll("[^A-Za-z0-9]", "").equalsIgnoreCase(norm))
-                        .findFirst().orElse(null);
-            }
+            dept = departmentService.findOrCreateByName(requestedDepartment);
         }
 
         String password = req.getPassword() != null && !req.getPassword().isBlank()
                 ? req.getPassword() : UUID.randomUUID().toString().substring(0, 12);
 
         User user = new User();
+        user.setUserCode(userCodeGenerator.nextCode());
         user.setEmail(cleanEmail);
         user.setHashedPassword(passwordEncoder.encode(password));
         user.setFullName(req.getFullName());

@@ -55,15 +55,14 @@ export const appointmentService = {
 
   /**
    * Book an appointment.
-   * patientId and doctorId must be numeric DB PKs.
+   * MongoDB identifiers are strings (usually ObjectIds); preserve them as strings.
    */
   async bookAppointment(bookingData, currentUser) {
-    // Resolve numeric IDs — the select values are now numeric PKs
-    const patientId = Number(bookingData.patientId);
-    const doctorId  = Number(bookingData.doctorId);
+    const patientId = String(bookingData.patientId || '').trim();
+    const doctorId = String(bookingData.doctorId || '').trim();
 
-    if (!patientId || isNaN(patientId)) throw new Error('Please select a valid patient.');
-    if (!doctorId  || isNaN(doctorId))  throw new Error('Please select a valid doctor.');
+    if (!patientId) throw new Error('Your patient profile is not linked to this account. Please contact the hospital.');
+    if (!doctorId) throw new Error('Please select a valid doctor.');
 
     const payload = {
       patient_id:        patientId,

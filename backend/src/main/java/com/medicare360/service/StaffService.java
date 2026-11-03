@@ -27,11 +27,12 @@ public class StaffService {
     private final DepartmentRepository departmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
+    private final UserCodeGenerator userCodeGenerator;
 
     public StaffService(NurseRepository nurseRepository, ReceptionistRepository receptionistRepository,
                         PharmacistRepository pharmacistRepository, StaffScheduleRepository staffScheduleRepository,
                         UserRepository userRepository, DepartmentRepository departmentRepository,
-                        PasswordEncoder passwordEncoder, AuditService auditService) {
+                        PasswordEncoder passwordEncoder, AuditService auditService, UserCodeGenerator userCodeGenerator) {
         this.nurseRepository = nurseRepository;
         this.receptionistRepository = receptionistRepository;
         this.pharmacistRepository = pharmacistRepository;
@@ -40,6 +41,7 @@ public class StaffService {
         this.departmentRepository = departmentRepository;
         this.passwordEncoder = passwordEncoder;
         this.auditService = auditService;
+        this.userCodeGenerator = userCodeGenerator;
     }
 
     // --- NURSES ---
@@ -64,6 +66,7 @@ public class StaffService {
                 ? req.getPassword() : UUID.randomUUID().toString().substring(0, 12);
 
         User user = new User();
+        user.setUserCode(userCodeGenerator.nextCode());
         user.setEmail(cleanEmail);
         user.setHashedPassword(passwordEncoder.encode(password));
         user.setFullName(req.getFullName());
@@ -116,6 +119,7 @@ public class StaffService {
                 ? req.getPassword() : UUID.randomUUID().toString().substring(0, 12);
 
         User user = new User();
+        user.setUserCode(userCodeGenerator.nextCode());
         user.setEmail(cleanEmail);
         user.setHashedPassword(passwordEncoder.encode(password));
         user.setFullName(req.getFullName());
@@ -162,6 +166,7 @@ public class StaffService {
                 ? req.getPassword() : UUID.randomUUID().toString().substring(0, 12);
 
         User user = new User();
+        user.setUserCode(userCodeGenerator.nextCode());
         user.setEmail(cleanEmail);
         user.setHashedPassword(passwordEncoder.encode(password));
         user.setFullName(req.getFullName());

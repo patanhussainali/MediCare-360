@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import PatientQuickSearch from './PatientQuickSearch';
+import { useAuth } from '../../context/AuthContext';
 
 const MainLayout = () => {
   // sidebarOpen: mobile drawer open/closed
@@ -9,6 +11,7 @@ const MainLayout = () => {
   // sidebarCollapsed: tablet icon-only mode
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
+  const { currentUser } = useAuth();
 
   // Close mobile drawer on route change
   useEffect(() => {
@@ -62,6 +65,11 @@ const MainLayout = () => {
           toggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           sidebarCollapsed={sidebarCollapsed}
         />
+        {currentUser?.role !== 'PATIENT' && (
+          <div className="sticky top-16 z-20 border-b border-slate-100 bg-white/90 px-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90 md:px-6">
+            <PatientQuickSearch />
+          </div>
+        )}
         <main className="flex-1 page-content animate-fadeIn">
           <Outlet />
         </main>

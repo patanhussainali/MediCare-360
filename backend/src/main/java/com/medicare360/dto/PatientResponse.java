@@ -14,6 +14,7 @@ public class PatientResponse {
     private String id;
     private String patientId;
     private String userId;
+    private String userCode;
     private String fullName;
     private String gender;
     private String dateOfBirth;

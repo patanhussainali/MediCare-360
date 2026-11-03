@@ -172,6 +172,8 @@ const Topbar = ({ toggleSidebar, toggleCollapse, sidebarCollapsed }) => {
                 <div className="px-4 py-2 border-b border-slate-100 dark:border-[#343A3C]">
                   <p className="text-xs font-bold text-slate-800 dark:text-white">{currentUser?.name}</p>
                   <p className="text-[11px] text-slate-400 truncate">{currentUser?.email}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Mobile: {currentUser?.phone || 'Not provided'}</p>
+                  <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">ID: {currentUser?.userCode || currentUser?.id}</p>
                 </div>
                 <button
                   onClick={handleLogout}

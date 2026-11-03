@@ -57,6 +57,10 @@ public class UserService {
             }
         }
 
+        if (role == UserRole.ADMIN) {
+            throw new ForbiddenException("Administrator accounts cannot be created from the application.");
+        }
+
         if (role == UserRole.PATIENT) {
             if (req.getDepartment() != null && !req.getDepartment().isBlank()
                     && !req.getDepartment().equalsIgnoreCase("N/A") && !req.getDepartment().equalsIgnoreCase("None")) {
@@ -119,8 +123,8 @@ public class UserService {
         if (req.getRole() != null && !req.getRole().isBlank()) {
             try {
                 UserRole newRole = UserRole.valueOf(req.getRole().toUpperCase());
-                if (newRole == UserRole.ADMIN && currentUser.getRole() != UserRole.ADMIN) {
-                    throw new ForbiddenException("Insufficient permissions to assign ADMIN role.");
+                if (newRole == UserRole.ADMIN) {
+                    throw new ForbiddenException("Administrator role cannot be assigned from the application.");
                 }
                 user.setRole(newRole);
                 targetRole = newRole;

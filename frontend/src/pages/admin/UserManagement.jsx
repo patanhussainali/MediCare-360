@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PhoneInput from '../../components/common/PhoneInput';
 import {
-  Users, UserPlus, KeyRound, Edit, Trash2, Shield,
+  Users, UserPlus, KeyRound, Edit, Trash2,
   Stethoscope, HeartPulse, UserCheck, Pill, FlaskConical,
   User, CheckCircle2, XCircle, Search, AlertCircle, RefreshCw
 } from 'lucide-react';
@@ -22,7 +22,6 @@ const ROLE_OPTIONS = [
   { id: 'RECEPTIONIST', label: 'Receptionist', icon: UserCheck, color: 'bg-hospital-100 text-hospital-800 dark:bg-hospital-900/40 dark:text-hospital-300' },
   { id: 'PHARMACIST', label: 'Pharmacist', icon: Pill, color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' },
   { id: 'LAB_TECHNICIAN', label: 'Lab Technician', icon: FlaskConical, color: 'bg-hospital-100 text-hospital-800 dark:bg-hospital-900/40 dark:text-hospital-300' },
-  { id: 'ADMIN', label: 'Administrator', icon: Shield, color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300' },
   { id: 'PATIENT', label: 'Patient', icon: User, color: 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300' },
 ];
 
@@ -223,6 +222,7 @@ const UserManagement = () => {
       name.toLowerCase().includes(q) ||
       email.toLowerCase().includes(q) ||
       id.toLowerCase().includes(q) ||
+      String(u.userCode || '').toLowerCase().includes(q) ||
       dept.toLowerCase().includes(q);
     return matchesRole && matchesSearch;
   });
@@ -230,8 +230,8 @@ const UserManagement = () => {
   const columns = [
     {
       header: 'User ID',
-      accessor: 'id',
-      render: (r) => <span className="font-mono text-xs text-slate-500">{r.id}</span>
+      accessor: 'userCode',
+      render: (r) => <span className="font-mono text-xs text-slate-500">{r.userCode || r.id}</span>
     },
     {
       header: 'Full Name',
@@ -589,7 +589,24 @@ const UserManagement = () => {
               />
             </div>
 
-            {createForm.role !== 'PATIENT' ? (
+            {createForm.role === 'DOCTOR' ? (
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Clinical Department <span className="text-hospital-600">*</span>
+                </label>
+                <input
+                  required
+                  list="clinical-departments"
+                  value={createForm.department}
+                  onChange={e => setCreateForm({ ...createForm, department: e.target.value })}
+                  placeholder="Select or type a department"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl"
+                />
+                <datalist id="clinical-departments">
+                  {[...new Set([...departments.map(d => d.name), ...getAssignmentsForRole('DOCTOR')])].map(name => <option key={name} value={name} />)}
+                </datalist>
+              </div>
+            ) : createForm.role !== 'PATIENT' ? (
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Assigned Department / Designation <span className="text-hospital-600">*</span>

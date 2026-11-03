@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.DuplicateKeyException;
 
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,37 @@ public class DepartmentService {
         Department dept = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found"));
         return toResponse(dept);
+    }
+
+    public Department findOrCreateByName(String requestedName) {
+        if (requestedName == null || requestedName.isBlank()) return null;
+        String name = requestedName.trim();
+        String normalized = name.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+        Department existing = departmentRepository.findAll().stream()
+                .filter(d -> d.getName() != null && d.getName().replaceAll("[^A-Za-z0-9]", "").toLowerCase().equals(normalized))
+                .findFirst().orElse(null);
+        if (existing != null) return existing;
+
+        String base = normalized.toUpperCase();
+        if (base.isBlank()) base = "DEPT";
+        base = base.length() > 6 ? base.substring(0, 6) : base;
+        String code = base;
+        for (int suffix = 1; departmentRepository.findByCode(code).isPresent(); suffix++) {
+            String digits = String.valueOf(suffix);
+            code = base.substring(0, Math.min(base.length(), 6 - digits.length())) + digits;
+        }
+        Department department = new Department();
+        department.setName(name);
+        department.setCode(code);
+        department.setStatus("Active");
+        department.setActive(true);
+        try {
+            return departmentRepository.save(department);
+        } catch (DuplicateKeyException duplicate) {
+            return departmentRepository.findAll().stream()
+                    .filter(d -> d.getName() != null && d.getName().replaceAll("[^A-Za-z0-9]", "").equalsIgnoreCase(normalized))
+                    .findFirst().orElseThrow(() -> duplicate);
+        }
     }
 
     public DepartmentResponse create(DepartmentCreateRequest req, User currentUser, String ipAddress, String userAgent) {

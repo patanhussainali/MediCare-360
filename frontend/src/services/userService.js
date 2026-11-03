@@ -15,6 +15,7 @@ export const normalizeUser = (u) => {
   const isActive = typeof u.is_active === 'boolean' ? u.is_active : (u.status === 'Active' || u.status === true);
   return {
     id: u.id,
+    userCode: u.user_code || u.userCode || u.id,
     name: u.full_name || u.name || 'Unnamed User',
     full_name: u.full_name || u.name || 'Unnamed User',
     email: u.email || '',

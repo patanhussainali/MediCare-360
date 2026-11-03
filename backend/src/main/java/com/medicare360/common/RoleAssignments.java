@@ -63,6 +63,7 @@ public class RoleAssignments {
         if (department == null || department.isBlank()) {
             return false;
         }
+        if (role == UserRole.DOCTOR) return true;
         List<String> valid = getAssignmentsForRole(role);
         return valid.stream().anyMatch(v -> v.equalsIgnoreCase(department.trim()));
     }

@@ -16,7 +16,7 @@ const Profile = () => {
   ) || {
     name: currentUser?.name || '',
     email: currentUser?.email || '',
-    phone: '',
+    phone: currentUser?.phone || '',
     bloodGroup: 'O+',
     gender: 'Not Specified',
     dateOfBirth: '',
@@ -50,6 +50,7 @@ const Profile = () => {
             <div>
               <h2 className="text-xl font-bold text-slate-800 dark:text-white">{currentUser?.name}</h2>
               <p className="text-xs text-slate-400">Patient Profile & Medical History</p>
+              <p className="text-[11px] font-mono text-slate-500">User ID: {currentUser?.userCode || currentUser?.id}</p>
             </div>
           </div>
           {saved && (

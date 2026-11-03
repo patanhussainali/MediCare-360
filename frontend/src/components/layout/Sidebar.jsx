@@ -68,7 +68,6 @@ const Sidebar = ({ isOpen, collapsed, toggleSidebar, toggleCollapse, sidebarW })
       { path: '/admin/doctors',      label: 'Doctor Management',   icon: Stethoscope },
       { path: '/admin/patients',     label: 'Patient Management',  icon: HeartPulse },
       { path: '/admin/staff',        label: 'Staff Management',    icon: UserPlus },
-      { path: '/admin/departments',  label: 'Departments',         icon: Building },
       { path: '/admin/appointments', label: 'All Appointments',    icon: Calendar },
       { path: '/admin/billing',      label: 'Billing & Invoices',   icon: CreditCard },
       { path: '/admin/pharmacy',     label: 'Pharmacy Control',    icon: Pill },

@@ -43,7 +43,7 @@ public class PatientController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('RECEPTIONIST') or hasAuthority('DOCTOR') or hasAuthority('NURSE')")
+    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('RECEPTIONIST') or hasAuthority('DOCTOR') or hasAuthority('NURSE') or hasAuthority('PHARMACIST') or hasAuthority('LAB_TECHNICIAN')")
     public ResponseEntity<List<PatientResponse>> listPatients(
             @RequestParam(value = "skip", defaultValue = "0") int skip,
             @RequestParam(value = "limit", defaultValue = "50") int limit,
@@ -62,7 +62,7 @@ public class PatientController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('RECEPTIONIST') or hasAuthority('DOCTOR') or hasAuthority('NURSE') or hasAuthority('PHARMACIST') or hasAuthority('LAB_TECHNICIAN')")
     public ResponseEntity<PatientResponse> getPatient(@PathVariable("id") String id) {
         return ResponseEntity.ok(patientService.getById(id));
     }

@@ -12,61 +12,6 @@ import { logAuditEvent } from './auditService.js';
 
 export const authService = {
   /**
-   * Check if system has any registered admin.
-   * Calls the backend /auth/check-admin endpoint.
-   */
-  async checkAdminStatus() {
-    try {
-      const response = await axiosInstance.get('/auth/check-admin');
-      return { success: true, data: response.data };
-    } catch (err) {
-      // If endpoint not reachable or on deployed preview, default to true to show normal login
-      return { success: true, data: { hasAdmin: true } };
-    }
-  },
-
-  /**
-   * Initial setup routine for establishing the primary Admin account.
-   * Sends credentials to the backend; password is hashed server-side with bcrypt.
-   */
-  async setupMasterAdmin(adminData) {
-    try {
-      const response = await axiosInstance.post('/auth/setup-admin', {
-        full_name: adminData.name || 'Hospital Administrator',
-        email: adminData.email.trim().toLowerCase(),
-        password: adminData.password,
-        role: 'ADMIN',
-      });
-
-      const { access_token, refresh_token, user } = response.data;
-
-      // Store safe session data (no password, no hash)
-      const userSession = {
-        id: user.id,
-        name: user.full_name,
-        email: user.email,
-        role: user.role,
-        department: user.department || 'Executive Administration',
-        status: user.is_active ? 'Active' : 'Inactive',
-      };
-
-      setItem(STORAGE_KEYS.CURRENT_USER, userSession);
-      setItem(STORAGE_KEYS.TOKEN, access_token);
-      if (refresh_token) setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
-
-      logAuditEvent('INITIAL_SYSTEM_SETUP', 'System Administrator account created', userSession.id, userSession.name);
-
-      return {
-        success: true,
-        data: { message: 'Master Administrator created successfully', user: userSession },
-      };
-    } catch (err) {
-      const detail = err?.response?.data?.detail || err.message || 'Setup failed';
-      throw new Error(detail);
-    }
-  },
-
-  /**
    * Login — sends credentials to backend for bcrypt verification and JWT issuance.
    * Never validates passwords locally.
    */
@@ -98,11 +43,13 @@ export const authService = {
       // Store only safe, non-sensitive session info (never password or hash)
       const userSession = {
         id: user.id,
+        userCode: user.user_code || user.userCode || user.id,
         name: user.full_name,
         email: user.email,
         role: user.role,          // Role from backend/database — never from client input
         department: user.department || 'N/A',
         profileId: user.profile_id || null,
+        phone: user.phone || '',
         status: user.is_active ? 'Active' : 'Inactive',
       };
 

@@ -13,7 +13,6 @@ import Departments from '../pages/public/Departments';
 import Contact from '../pages/public/Contact';
 import Login from '../pages/public/Login';
 import Register from '../pages/public/Register';
-import InitialAdminSetup from '../pages/public/InitialAdminSetup';
 import ForgotPassword from '../pages/public/ForgotPassword';
 
 // Patient Pages
@@ -71,7 +70,6 @@ import UserManagement from '../pages/admin/UserManagement';
 import DoctorManagement from '../pages/admin/DoctorManagement';
 import PatientManagement from '../pages/admin/PatientManagement';
 import StaffManagement from '../pages/admin/StaffManagement';
-import DepartmentManagement from '../pages/admin/DepartmentManagement';
 import AdminAppointmentManagement from '../pages/admin/AppointmentManagement';
 import AdminBillingManagement from '../pages/admin/BillingManagement';
 import AdminPharmacyManagement from '../pages/admin/PharmacyManagement';
@@ -91,7 +89,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/login/:portalRole" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/initial-admin-setup" element={<InitialAdminSetup />} />
+      <Route path="/initial-admin-setup" element={<Navigate to="/login" replace />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
 
       {/* Patient Portal Routes */}
@@ -162,7 +160,6 @@ const AppRoutes = () => {
         <Route path="/admin/doctors" element={<DoctorManagement />} />
         <Route path="/admin/patients" element={<PatientManagement />} />
         <Route path="/admin/staff" element={<StaffManagement />} />
-        <Route path="/admin/departments" element={<DepartmentManagement />} />
         <Route path="/admin/appointments" element={<AdminAppointmentManagement />} />
         <Route path="/admin/billing" element={<AdminBillingManagement />} />
         <Route path="/admin/pharmacy" element={<AdminPharmacyManagement />} />

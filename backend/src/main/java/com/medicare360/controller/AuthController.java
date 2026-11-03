@@ -8,8 +8,8 @@ import com.medicare360.security.UserPrincipal;
 import com.medicare360.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -26,27 +26,6 @@ public class AuthController {
     public AuthController(AuthService authService, UserRepository userRepository) {
         this.authService = authService;
         this.userRepository = userRepository;
-    }
-
-    @GetMapping("/check-admin")
-    public ResponseEntity<Map<String, Boolean>> checkAdmin() {
-        return ResponseEntity.ok(Map.of("hasAdmin", authService.checkAdminExists()));
-    }
-
-    @PostMapping("/setup-admin")
-    public ResponseEntity<TokenResponse> setupAdmin(
-            @Valid @RequestBody UserCreateRequest req,
-            HttpServletRequest request
-    ) {
-        TokenResponse token = authService.setupAdmin(
-                req.getEmail(),
-                req.getPassword(),
-                req.getFullName(),
-                req.getPhoneNumber(),
-                request.getRemoteAddr(),
-                request.getHeader("User-Agent")
-        );
-        return ResponseEntity.status(HttpStatus.CREATED).body(token);
     }
 
     @PostMapping("/register")
