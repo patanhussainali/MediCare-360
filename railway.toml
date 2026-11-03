@@ -1,9 +1,8 @@
 [build]
-builder = "NIXPACKS"
-buildCommand = "cd java-backend && mvn clean package -DskipTests"
+builder = "DOCKERFILE"
+dockerfilePath = "java-backend/Dockerfile"
 
 [deploy]
-startCommand = "java -jar java-backend/target/medicare360-1.0.0.jar --server.port=$PORT"
 healthcheckPath = "/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
