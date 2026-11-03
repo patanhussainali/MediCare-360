@@ -22,16 +22,16 @@ export const normalizeApiUrl = (url) => {
  * Returns the effective API base URL in order of priority:
  * 1. Runtime override in localStorage (VITE_API_BASE_URL or API_BASE_URL)
  * 2. Vite build-time environment variable (import.meta.env.VITE_API_BASE_URL or VITE_API_URL)
- * 3. Localhost fallback (http://127.0.0.1:8000/api/v1) or relative /api/v1
+ * 3. Localhost fallback (http://127.0.0.1:8080/api/v1) or relative /api/v1
  */
 export const getApiBaseUrl = () => {
   if (isBrowser) {
     const runtimeUrl = localStorage.getItem('VITE_API_BASE_URL') || localStorage.getItem('API_BASE_URL');
     if (runtimeUrl && runtimeUrl.trim()) {
       const normalizedRuntimeUrl = normalizeApiUrl(runtimeUrl);
-      const staleLocalBackend = /^http:\/\/(localhost|127\.0\.0\.1):8080\/api\/v1$/i.test(normalizedRuntimeUrl);
+      const staleLocalBackend = /^http:\/\/(localhost|127\.0\.0\.1):8000\/api\/v1$/i.test(normalizedRuntimeUrl);
       if (isLocalhost && staleLocalBackend) {
-        const migratedUrl = 'http://127.0.0.1:8000/api/v1';
+        const migratedUrl = 'http://127.0.0.1:8080/api/v1';
         localStorage.setItem('VITE_API_BASE_URL', migratedUrl);
         localStorage.setItem('API_BASE_URL', migratedUrl);
         return migratedUrl;
@@ -42,10 +42,13 @@ export const getApiBaseUrl = () => {
 
   const envUrl = typeof import.meta !== 'undefined' && (import.meta.env?.VITE_API_BASE_URL || import.meta.env?.VITE_API_URL);
   if (envUrl && envUrl.trim()) {
-    return normalizeApiUrl(envUrl);
+    const normalizedEnvUrl = normalizeApiUrl(envUrl);
+    const staleLocalBackend = /^http:\/\/(localhost|127\.0\.0\.1):8000\/api\/v1$/i.test(normalizedEnvUrl);
+    if (isLocalhost && staleLocalBackend) return 'http://127.0.0.1:8080/api/v1';
+    return normalizedEnvUrl;
   }
 
-  return isLocalhost ? 'http://127.0.0.1:8000/api/v1' : '/api/v1';
+  return isLocalhost ? 'http://127.0.0.1:8080/api/v1' : '/api/v1';
 };
 
 /**
@@ -154,11 +157,11 @@ axiosInstance.interceptors.response.use(
     if (error.code === 'ECONNABORTED' || (error.message && error.message.toLowerCase().includes('timeout'))) {
       error.message = isDeployed
         ? 'The backend server took too long to respond. Please check your deployed Railway service.'
-        : 'The server took too long to respond. Please ensure the backend is running at http://127.0.0.1:8000.';
+        : 'The server took too long to respond. Please ensure the Java backend is running at http://127.0.0.1:8080.';
     } else if (error.code === 'ERR_NETWORK' || !error.response) {
       error.message = isDeployed
         ? 'Cannot reach live backend API. Connect your Railway backend URL via VITE_API_BASE_URL in Netlify site settings.'
-        : 'Unable to reach the backend server. Please verify the Java backend is running at http://127.0.0.1:8000.';
+        : 'Unable to reach the backend server. Please verify the Java backend is running at http://127.0.0.1:8080.';
     } else if (error.response?.status === 404 && isDeployed) {
       const isHtmlResponse = typeof error.response.data === 'string' && error.response.data.includes('<!DOCTYPE');
       if (isHtmlResponse || !error.response.data?.detail) {
