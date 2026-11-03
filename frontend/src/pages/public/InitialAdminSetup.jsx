@@ -93,7 +93,7 @@ const InitialAdminSetup = () => {
                 placeholder="Hospital Administrator"
                 value={form.name}
                 onChange={e => setForm({ ...form, name: e.target.value })}
-                className="w-full px-4 py-2.5 text-sm bg-[#252821] border border-[#403A34] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#B96337] focus:border-[#B96337] text-white placeholder-slate-500"
+                className="w-full px-4 py-2.5 text-sm bg-[#252B2D] border border-[#343A3C] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#22E62C] focus:border-[#22E62C] text-white placeholder-slate-500"
               />
             </div>
 
@@ -105,7 +105,7 @@ const InitialAdminSetup = () => {
                 placeholder="admin@medicare360.com"
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
-                className="w-full px-4 py-2.5 text-sm bg-[#252821] border border-[#403A34] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#B96337] focus:border-[#B96337] text-white placeholder-slate-500"
+                className="w-full px-4 py-2.5 text-sm bg-[#252B2D] border border-[#343A3C] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#22E62C] focus:border-[#22E62C] text-white placeholder-slate-500"
               />
             </div>
 
@@ -117,7 +117,7 @@ const InitialAdminSetup = () => {
                 placeholder="••••••••"
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
-                className="w-full px-4 py-2.5 text-sm bg-[#252821] border border-[#403A34] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#B96337] focus:border-[#B96337] text-white placeholder-slate-500"
+                className="w-full px-4 py-2.5 text-sm bg-[#252B2D] border border-[#343A3C] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#22E62C] focus:border-[#22E62C] text-white placeholder-slate-500"
               />
             </div>
 
@@ -129,14 +129,14 @@ const InitialAdminSetup = () => {
                 placeholder="••••••••"
                 value={form.confirmPassword}
                 onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
-                className="w-full px-4 py-2.5 text-sm bg-[#252821] border border-[#403A34] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#B96337] focus:border-[#B96337] text-white placeholder-slate-500"
+                className="w-full px-4 py-2.5 text-sm bg-[#252B2D] border border-[#343A3C] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#22E62C] focus:border-[#22E62C] text-white placeholder-slate-500"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#A64E2E] hover:bg-[#873B27] text-white font-extrabold text-sm rounded-xl shadow-card transition-all disabled:opacity-50 mt-4"
+              className="w-full py-3 bg-[#22E62C] hover:bg-[#19C923] text-[#101812] font-extrabold text-sm rounded-xl shadow-card transition-all disabled:opacity-50 mt-4"
             >
               {loading ? 'Initializing System...' : 'Create Master Administrator'}
             </button>

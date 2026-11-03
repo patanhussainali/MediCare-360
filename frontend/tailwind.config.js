@@ -27,79 +27,63 @@ export default {
       },
       colors: {
         // Master Exact Theme Color Tokens
-        border: '#DED5C6',
-        input: '#F5F0E7',
-        ring: '#B96337',
+        border: '#E1E5E8',
+        input: '#F5F7F8',
+        ring: '#22E62C',
 
         // Primary Green
         primary: {
-          DEFAULT: '#A64E2E',
-          hover: '#873B27',
-          light: '#CC8050',
-          dark: '#66301F',
+          DEFAULT: '#22E62C',
+          hover: '#19C923',
+          light: '#76F17B',
+          dark: '#0E6B25',
           foreground: '#FFFFFF',
         },
 
         // Chart Palette
         chart: {
-          1: '#A64E2E',
-          2: '#D59A52',
-          3: '#667C58',
-          4: '#7A4531',
-          5: '#9A8D77',
+          1: '#22E62C',
+          2: '#168C27',
+          3: '#75C94A',
+          4: '#0E6B25',
+          5: '#9DCB8B',
         },
 
         // Hospital Palette (powers all hospital-* classes across the platform)
         hospital: {
-          50: '#FBF3E8',
-          100: '#F5E4CB',
-          200: '#E9C49A',
-          300: '#DDA66E',
-          400: '#CC8050',
-          500: '#B96337',
-          600: '#A64E2E',
-          700: '#873B27',
-          800: '#66301F',
-          900: '#452417',
-          950: '#291B15',
+          50: '#ECFDEE',
+          100: '#D6FAD9',
+          200: '#B0F4B6',
+          300: '#7BEB84',
+          400: '#4FE65A',
+          500: '#22E62C',
+          600: '#19C923',
+          700: '#149D1C',
+          800: '#117A1A',
+          900: '#0E5F18',
+          950: '#083A10',
         },
 
         // Secondary / Accent Colors
         secondary: {
-          DEFAULT: '#34473B',
-          hover: '#25352B',
-          light: '#526856',
-          dark: '#1D2922',
+          DEFAULT: '#17191A',
+          hover: '#252A2B',
+          light: '#323839',
+          dark: '#111314',
         },
 
-        // Mapped Emerald to Primary Green (#2FE92B)
+        // Emerald is the shared brand-green palette.
         emerald: {
-          50: '#F1F4EC',
-          100: '#E2E9D9',
-          200: '#C8D6B9',
-          300: '#A9BE94',
-          400: '#8FA777',
-          500: '#758F62',
-          600: '#627B52',
-          700: '#4D6242',
-          800: '#3C4D35',
-          900: '#303E2C',
-          950: '#192219',
+          50: '#ECFDEE', 100: '#D6FAD9', 200: '#B0F4B6', 300: '#7BEB84',
+          400: '#4FE65A', 500: '#22E62C', 600: '#19C923', 700: '#149D1C',
+          800: '#117A1A', 900: '#0E5F18', 950: '#083A10',
         },
 
-        // Mapped Green to Primary Green (#2FE92B)
+        // Green classes use the same shared brand-green palette.
         green: {
-          50: '#F1F4EC',
-          100: '#E2E9D9',
-          200: '#C8D6B9',
-          300: '#A9BE94',
-          400: '#8FA777',
-          500: '#758F62',
-          600: '#627B52',
-          700: '#4D6242',
-          800: '#3C4D35',
-          900: '#303E2C',
-          950: '#192219',
+          50: '#ECFDEE', 100: '#D6FAD9', 200: '#B0F4B6', 300: '#7BEB84',
+          400: '#4FE65A', 500: '#22E62C', 600: '#19C923', 700: '#149D1C',
+          800: '#117A1A', 900: '#0E5F18', 950: '#083A10',
         },
 
         // Chart 2 Orange mapping
@@ -114,42 +98,42 @@ export default {
           900: '#49351D',
         },
 
-        // Chart 3 & 4 Red/Orange mappings
+        // Brand-green aliases used by existing orange-accented components.
         orange: {
-          50: '#FBF0EA',
-          100: '#F4DDD0',
-          400: '#D48A61',
-          500: '#BD6B43',
-          600: '#A64E2E',
-          700: '#873B27',
-          800: '#66301F',
+          50: '#ECFDEE',
+          100: '#D6FAD9',
+          400: '#4FE65A',
+          500: '#22E62C',
+          600: '#19C923',
+          700: '#149D1C',
+          800: '#117A1A',
         },
 
-        // Dark surface & border hierarchy aligned with #26272D, #1B1B1D
+        // Neutral gray surfaces shared across every portal.
         slate: {
-          50: '#F7F3EA',
-          100: '#F0E9DD',
-          200: '#E0D6C5',
-          300: '#C5B9A7',
-          400: '#948A7C',
-          500: '#71695D',
-          600: '#574F47',
-          700: '#403A34',
-          800: '#322E29',
-          900: '#25241F',
-          950: '#171915',
+          50: '#F8FAFB',
+          100: '#F1F3F5',
+          200: '#E4E7EB',
+          300: '#CBD0D6',
+          400: '#9198A1',
+          500: '#68717C',
+          600: '#4B5563',
+          700: '#374151',
+          800: '#252A30',
+          900: '#181B1F',
+          950: '#111315',
         },
 
         // Preserved tokens mapped to new exact palette
         'soft-sage': {
-          DEFAULT: '#D6C8AE',
-          30: 'rgba(214, 200, 174, 0.3)',
+          DEFAULT: '#B0F4B6',
+          30: 'rgba(176, 244, 182, 0.3)',
         },
         'deep-forest': {
-          DEFAULT: '#26382D',
+          DEFAULT: '#117A1A',
         },
         'muted-teal': {
-          DEFAULT: '#667C58',
+          DEFAULT: '#168C27',
         }
       },
       fontFamily: {
@@ -157,8 +141,8 @@ export default {
       },
       boxShadow: {
         'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.2)',
-        'card': '0 12px 30px -12px rgba(76, 57, 38, 0.2)',
-        'glass': '0 16px 42px 0 rgba(38, 56, 45, 0.16)',
+        'card': '0 12px 30px -12px rgba(30, 44, 35, 0.18)',
+        'glass': '0 16px 42px 0 rgba(34, 120, 45, 0.14)',
       }
     },
   },

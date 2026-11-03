@@ -68,7 +68,7 @@ const HeroSection = () => {
       <div className="pointer-events-none absolute -bottom-40 -right-32 w-[600px] h-[600px] rounded-full bg-muted-teal/15 dark:bg-muted-teal/10 blur-3xl autumn-glow" aria-hidden />
       <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-soft-sage/15 dark:bg-hospital-900/20 blur-3xl" aria-hidden />
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <Leaf className="autumn-float absolute left-[8%] top-[22%] h-8 w-8 rotate-[-28deg] text-[#C2764E]/35" />
+        <Leaf className="autumn-float absolute left-[8%] top-[22%] h-8 w-8 rotate-[-28deg] text-[#22C92C]/35" />
         <Leaf className="autumn-float-delay absolute right-[11%] top-[30%] h-6 w-6 rotate-[34deg] text-[#D09A5B]/40" />
         <Leaf className="autumn-float absolute bottom-[17%] right-[42%] h-5 w-5 rotate-[62deg] text-[#667C58]/30" />
       </div>

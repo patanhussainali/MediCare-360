@@ -23,7 +23,7 @@ const PatientDashboard = () => {
   return (
     <div className="space-y-8">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-hospital-600 to-hospital-800 text-white p-6 md:p-8 rounded-3xl shadow-card">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-hospital-500 to-hospital-700 text-white p-6 md:p-8 rounded-3xl shadow-card">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider bg-white/20 px-3 py-1 rounded-full text-white">Patient Portal</span>
           <h2 className="text-2xl md:text-3xl font-extrabold mt-2 tracking-tight">Welcome, {currentUser?.name}</h2>

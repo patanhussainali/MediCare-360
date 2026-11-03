@@ -214,7 +214,7 @@ const Login = () => {
 
           {/* Top-Right Logo (Matches HIMS style in reference image) */}
           <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/30 shadow-lg">
-            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#34473B] to-[#C2764E] flex items-center justify-center text-white shadow-sm">
+            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#19C923] to-[#22E62C] flex items-center justify-center text-[#101812] shadow-sm">
               <Activity className="w-4 h-4" />
             </div>
             <div className="text-left">
