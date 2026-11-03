@@ -50,7 +50,7 @@ const Reports = () => {
 
           {/* Appointments Distribution */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-[#26272D] shadow-soft">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 shadow-soft">
               <h3 className="font-bold text-slate-800 dark:text-white text-lg mb-4">Appointments Status Distribution</h3>
               <div className="space-y-4 text-xs">
                 <div>
@@ -61,7 +61,7 @@ const Reports = () => {
                     </span>
                     <span>{stats.pendingAppointments} ({stats.totalAppointments ? Math.round((stats.pendingAppointments / stats.totalAppointments) * 100) : 0}%)</span>
                   </div>
-                  <div className="w-full bg-[#1B1B1D] border border-[#26272D] h-3 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-100 border border-slate-200 h-3 rounded-full overflow-hidden">
                     <div className="bg-[#FF9821] h-full" style={{ width: `${stats.totalAppointments ? (stats.pendingAppointments / stats.totalAppointments) * 100 : 0}%` }}></div>
                   </div>
                 </div>
@@ -69,13 +69,13 @@ const Reports = () => {
                 <div>
                   <div className="flex justify-between font-bold mb-1">
                     <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#2FE92B]"></span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
                       Completed Visits (Chart 1)
                     </span>
                     <span>{stats.completedAppointments} ({stats.totalAppointments ? Math.round((stats.completedAppointments / stats.totalAppointments) * 100) : 0}%)</span>
                   </div>
-                  <div className="w-full bg-[#1B1B1D] border border-[#26272D] h-3 rounded-full overflow-hidden">
-                    <div className="bg-[#2FE92B] h-full" style={{ width: `${stats.totalAppointments ? (stats.completedAppointments / stats.totalAppointments) * 100 : 0}%` }}></div>
+                  <div className="w-full bg-slate-100 border border-slate-200 h-3 rounded-full overflow-hidden">
+                    <div className="bg-emerald-600 h-full" style={{ width: `${stats.totalAppointments ? (stats.completedAppointments / stats.totalAppointments) * 100 : 0}%` }}></div>
                   </div>
                 </div>
 
@@ -87,25 +87,25 @@ const Reports = () => {
                     </span>
                     <span>{stats.cancelledAppointments} ({stats.totalAppointments ? Math.round((stats.cancelledAppointments / stats.totalAppointments) * 100) : 0}%)</span>
                   </div>
-                  <div className="w-full bg-[#1B1B1D] border border-[#26272D] h-3 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-100 border border-slate-200 h-3 rounded-full overflow-hidden">
                     <div className="bg-[#FF5102] h-full" style={{ width: `${stats.totalAppointments ? (stats.cancelledAppointments / stats.totalAppointments) * 100 : 0}%` }}></div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-[#26272D] shadow-soft">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 shadow-soft">
               <h3 className="font-bold text-slate-800 dark:text-white text-lg mb-4">Pharmacy Inventory Health</h3>
               <div className="space-y-4 text-xs">
-                <div className="p-4 bg-[#1B1B1D] rounded-2xl border border-[#26272D] flex justify-between items-center">
+                <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 flex justify-between items-center">
                   <div>
                     <span className="font-bold text-white">Total Drug Stock Units</span>
                     <p className="text-slate-400">{stats.totalMedicines} medicine catalog items</p>
                   </div>
-                  <span className="text-2xl font-black text-[#2FE92B]">{stats.availableMedicines}</span>
+                  <span className="text-2xl font-black text-hospital-600">{stats.availableMedicines}</span>
                 </div>
 
-                <div className="p-4 bg-[#1B1B1D] rounded-2xl border border-[#26272D] flex justify-between items-center">
+                <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 flex justify-between items-center">
                   <div>
                     <span className="font-bold text-[#F57733]">Low Stock Alert Items (Chart 3)</span>
                     <p className="text-slate-400 text-[11px]">Requires stock replenishment</p>

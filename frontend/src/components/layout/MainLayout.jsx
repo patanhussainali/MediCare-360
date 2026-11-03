@@ -36,7 +36,7 @@ const MainLayout = () => {
   const contentPl = sidebarCollapsed ? 'md:pl-[4.5rem]' : 'md:pl-64';
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-[#F5F0E7] to-[#EEE7DA] dark:from-slate-950 dark:via-slate-900 dark:to-[#202720] flex overflow-hidden">
       {/* ── Mobile overlay backdrop ─────────────────── */}
       {sidebarOpen && (
         <div

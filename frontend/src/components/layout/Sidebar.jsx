@@ -86,18 +86,18 @@ const Sidebar = ({ isOpen, collapsed, toggleSidebar, toggleCollapse, sidebarW })
 
   return (
     <aside
-      className={`fixed top-0 left-0 z-40 h-screen flex flex-col bg-[#1B1B1D] text-slate-300 border-r border-[#26272D] shadow-2xl transition-all duration-300 ${sidebarW} ${translateClass}`}
+      className={`fixed top-0 left-0 z-40 h-screen flex flex-col bg-[#202A23] text-slate-200 border-r border-[#344238] shadow-2xl transition-all duration-300 ${sidebarW} ${translateClass}`}
       aria-label="Main navigation"
     >
       {/* ── Brand Header ──────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 h-16 border-b border-[#26272D] bg-[#141518] shrink-0 pt-safe">
-        <div className="p-2 bg-[#2FE92B] rounded-xl text-black shadow-card shrink-0">
+      <div className="flex items-center gap-3 px-4 h-16 border-b border-[#344238] bg-[#19231D] shrink-0 pt-safe">
+        <div className="p-2 bg-[#C2764E] rounded-xl text-white shadow-card shrink-0">
           <Activity className="w-5 h-5" />
         </div>
         {!collapsed && (
           <div className="overflow-hidden">
             <h1 className="font-black tracking-tight text-white text-base leading-tight whitespace-nowrap">
-              MediCare<span className="text-[#2FE92B]">360</span>
+              MediCare<span className="text-[#D9A36F]">360</span>
             </h1>
             <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider whitespace-nowrap">
               Hospital Platform
@@ -108,7 +108,7 @@ const Sidebar = ({ isOpen, collapsed, toggleSidebar, toggleCollapse, sidebarW })
         {/* Close button – mobile only */}
         <button
           onClick={toggleSidebar}
-          className="ml-auto p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#26272D] md:hidden"
+          className="ml-auto p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#344238] md:hidden"
           aria-label="Close sidebar"
         >
           <X className="w-4 h-4" />
@@ -117,9 +117,9 @@ const Sidebar = ({ isOpen, collapsed, toggleSidebar, toggleCollapse, sidebarW })
 
       {/* ── Role Badge (hidden when collapsed) ────── */}
       {!collapsed && (
-        <div className="px-4 py-2 bg-[#141518] border-b border-[#26272D] flex items-center justify-between shrink-0">
+        <div className="px-4 py-2 bg-[#19231D] border-b border-[#344238] flex items-center justify-between shrink-0">
           <span className="text-xs font-medium text-slate-400">Role:</span>
-          <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#2FE92B]/15 text-[#2FE92B] border border-[#2FE92B]/30">
+          <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#D9A36F]/15 text-[#E7B882] border border-[#D9A36F]/30">
             {role}
           </span>
         </div>
@@ -138,8 +138,8 @@ const Sidebar = ({ isOpen, collapsed, toggleSidebar, toggleCollapse, sidebarW })
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150 ${
                   isActive
-                    ? 'bg-[#2FE92B] text-black font-semibold shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-[#26272D]'
+                    ? 'bg-[#C2764E] text-white font-semibold shadow-sm'
+                    : 'text-slate-300 hover:text-white hover:bg-[#344238]'
                 } ${collapsed ? 'justify-center px-0' : ''}`
               }
             >
@@ -151,7 +151,7 @@ const Sidebar = ({ isOpen, collapsed, toggleSidebar, toggleCollapse, sidebarW })
       </nav>
 
       {/* ── Collapse toggle (desktop/tablet only) ── */}
-      <div className="hidden md:flex items-center justify-between px-3 py-3 border-t border-[#26272D] bg-[#141518] shrink-0">
+      <div className="hidden md:flex items-center justify-between px-3 py-3 border-t border-[#344238] bg-[#19231D] shrink-0">
         {!collapsed && (
           <span className="text-[10px] text-slate-500 font-medium truncate">
             MediCare360 &copy; 2026
@@ -159,7 +159,7 @@ const Sidebar = ({ isOpen, collapsed, toggleSidebar, toggleCollapse, sidebarW })
         )}
         <button
           onClick={toggleCollapse}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#26272D] transition-colors"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#344238] transition-colors"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -168,7 +168,7 @@ const Sidebar = ({ isOpen, collapsed, toggleSidebar, toggleCollapse, sidebarW })
 
       {/* ── Mobile footer ─────────────────────────── */}
       {!collapsed && (
-        <div className="md:hidden p-3 border-t border-[#26272D] bg-[#141518] text-xs text-slate-500 text-center pb-safe shrink-0">
+        <div className="md:hidden p-3 border-t border-[#344238] bg-[#19231D] text-xs text-slate-400 text-center pb-safe shrink-0">
           MediCare360 &copy; 2026
         </div>
       )}

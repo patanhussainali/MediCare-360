@@ -214,7 +214,7 @@ const Login = () => {
 
           {/* Top-Right Logo (Matches HIMS style in reference image) */}
           <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/30 shadow-lg">
-            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#087f8c] to-[#2FE92B] flex items-center justify-center text-white shadow-sm">
+            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#34473B] to-[#C2764E] flex items-center justify-center text-white shadow-sm">
               <Activity className="w-4 h-4" />
             </div>
             <div className="text-left">
@@ -424,7 +424,7 @@ const Login = () => {
           <div className="hidden lg:flex flex-1 flex-col justify-end items-end p-8 text-right text-white">
             <div className="bg-slate-900/60 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-2xl max-w-sm">
               <div className="flex items-center justify-end gap-2 text-teal-300 text-xs font-bold mb-1">
-                <span className="w-2 h-2 rounded-full bg-[#2FE92B] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-[#758F62] animate-pulse" />
                 Hospital Management &amp; Clinical Care
               </div>
               <p className="text-sm font-extrabold text-white">

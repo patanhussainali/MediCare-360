@@ -40,12 +40,12 @@ const Topbar = ({ toggleSidebar, toggleCollapse, sidebarCollapsed }) => {
         <div className="fixed inset-0 z-20" onClick={closeAll} aria-hidden="true" />
       )}
 
-      <header className="sticky top-0 z-30 h-16 bg-white/90 dark:bg-[#1B1B1D]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-[#26272D] flex items-center justify-between shadow-sm pt-safe">
+      <header className="sticky top-0 z-30 h-16 bg-[#FFFCF6]/90 dark:bg-[#202720]/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-[#403A34] flex items-center justify-between shadow-sm pt-safe">
         <div className="flex items-center gap-2 px-3 sm:px-4 md:px-6 flex-1 min-w-0">
           {/* Mobile menu toggle */}
           <button
             onClick={toggleSidebar}
-            className="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-[#26272D] transition-colors md:hidden shrink-0"
+            className="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-[#344238] transition-colors md:hidden shrink-0"
             aria-label="Open menu"
           >
             <Menu className="w-5 h-5" />
@@ -54,7 +54,7 @@ const Topbar = ({ toggleSidebar, toggleCollapse, sidebarCollapsed }) => {
           {/* Collapse toggle – tablet/desktop */}
           <button
             onClick={toggleCollapse}
-            className="hidden md:flex p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-[#26272D] transition-colors shrink-0"
+            className="hidden md:flex p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-[#344238] transition-colors shrink-0"
             aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
@@ -80,7 +80,7 @@ const Topbar = ({ toggleSidebar, toggleCollapse, sidebarCollapsed }) => {
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-xl bg-slate-100 dark:bg-[#141518] hover:bg-slate-200 dark:hover:bg-[#26272D] border border-slate-200 dark:border-[#26272D] text-slate-600 dark:text-slate-300 transition-colors"
+            className="p-2 rounded-xl bg-slate-100 dark:bg-[#19231D] hover:bg-slate-200 dark:hover:bg-[#344238] border border-slate-200 dark:border-[#403A34] text-slate-600 dark:text-slate-300 transition-colors"
             aria-label="Toggle light/dark mode"
           >
             {theme === 'dark'
@@ -152,10 +152,10 @@ const Topbar = ({ toggleSidebar, toggleCollapse, sidebarCollapsed }) => {
           <div className="relative">
             <button
               onClick={() => { setShowProfileMenu(!showProfileMenu); setShowNotifications(false); }}
-              className="flex items-center gap-1.5 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-[#26272D] transition-colors"
+              className="flex items-center gap-1.5 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-[#344238] transition-colors"
               aria-label="Profile menu"
             >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#2FE92B] text-black flex items-center justify-center font-bold text-xs sm:text-sm shadow-sm">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#C2764E] text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-sm">
                 {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
               </div>
               <div className="hidden lg:flex flex-col text-left">
@@ -168,8 +168,8 @@ const Topbar = ({ toggleSidebar, toggleCollapse, sidebarCollapsed }) => {
             </button>
 
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-[#18191D] rounded-2xl shadow-2xl border border-slate-100 dark:border-[#26272D] py-2 z-50 animate-fadeIn">
-                <div className="px-4 py-2 border-b border-slate-100 dark:border-[#26272D]">
+              <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-[#222720] rounded-2xl shadow-2xl border border-slate-100 dark:border-[#403A34] py-2 z-50 animate-fadeIn">
+                <div className="px-4 py-2 border-b border-slate-100 dark:border-[#403A34]">
                   <p className="text-xs font-bold text-slate-800 dark:text-white">{currentUser?.name}</p>
                   <p className="text-[11px] text-slate-400 truncate">{currentUser?.email}</p>
                 </div>

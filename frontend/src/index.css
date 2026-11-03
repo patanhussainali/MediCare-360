@@ -3,33 +3,33 @@
 @tailwind utilities;
 
 :root {
-  --color-border: #26272D;
-  --color-input: #1B1B1D;
-  --color-ring: #2FE92B;
-  --color-primary: #2FE92B;
-  --color-primary-hover: #24C421;
-  --color-chart-1: #2FE92B;
-  --color-chart-2: #FF9821;
-  --color-chart-3: #F57733;
-  --color-chart-4: #FF5102;
-  --color-chart-5: #6B7367;
-  --background: #F7F8F9;
-  --foreground: #101114;
-  --card: #FFFFFF;
-  --card-foreground: #101114;
-  --primary: #2FE92B;
-  --primary-foreground: #000000;
-  --secondary: #26272D;
+  --color-border: #DED5C6;
+  --color-input: #F5F0E7;
+  --color-ring: #B96337;
+  --color-primary: #A64E2E;
+  --color-primary-hover: #873B27;
+  --color-chart-1: #A64E2E;
+  --color-chart-2: #D59A52;
+  --color-chart-3: #667C58;
+  --color-chart-4: #7A4531;
+  --color-chart-5: #9A8D77;
+  --background: #F7F3EA;
+  --foreground: #25241F;
+  --card: #FFFCF6;
+  --card-foreground: #25241F;
+  --primary: #A64E2E;
+  --primary-foreground: #FFFFFF;
+  --secondary: #34473B;
   --secondary-foreground: #FFFFFF;
-  --muted: #6B7367;
-  --muted-foreground: #8E929E;
-  --border: #26272D;
-  --input: #1B1B1D;
-  --ring: #2FE92B;
-  --sidebar-bg: #1B1B1D;
-  --sidebar-border: #26272D;
-  --sidebar-text: #E2E4E8;
-  --sidebar-active: #2FE92B;
+  --muted: #71695D;
+  --muted-foreground: #948A7C;
+  --border: #DED5C6;
+  --input: #F5F0E7;
+  --ring: #B96337;
+  --sidebar-bg: #202A23;
+  --sidebar-border: #344238;
+  --sidebar-text: #E9E5DA;
+  --sidebar-active: #C2764E;
   --sidebar-width: 16rem;
   --sidebar-icon-width: 4.5rem;
   --topbar-height: 4rem;
@@ -40,23 +40,23 @@
 }
 
 .dark {
-  --background: #101114;
-  --foreground: #F7F8F9;
-  --card: #18191D;
-  --card-foreground: #F7F8F9;
-  --primary: #2FE92B;
-  --primary-foreground: #000000;
-  --secondary: #26272D;
+  --background: #171915;
+  --foreground: #F4EFE5;
+  --card: #222720;
+  --card-foreground: #F4EFE5;
+  --primary: #D08B63;
+  --primary-foreground: #211B16;
+  --secondary: #34473B;
   --secondary-foreground: #FFFFFF;
-  --muted: #26272D;
-  --muted-foreground: #8E929E;
-  --border: #26272D;
-  --input: #1B1B1D;
-  --ring: #2FE92B;
-  --sidebar-bg: #141518;
-  --sidebar-border: #26272D;
-  --sidebar-text: #E2E4E8;
-  --sidebar-active: #2FE92B;
+  --muted: #403A34;
+  --muted-foreground: #B7AA97;
+  --border: #403A34;
+  --input: #252821;
+  --ring: #D08B63;
+  --sidebar-bg: #151D18;
+  --sidebar-border: #344238;
+  --sidebar-text: #E9E5DA;
+  --sidebar-active: #C2764E;
 }
 
 @layer base {
@@ -74,7 +74,7 @@
   }
 
   body {
-    @apply bg-[#F7F8F9] text-[#101114] dark:bg-[#101114] dark:text-[#F7F8F9] antialiased font-sans transition-colors duration-150;
+    @apply bg-[#F7F3EA] text-[#25241F] dark:bg-[#171915] dark:text-[#F4EFE5] antialiased font-sans transition-colors duration-200;
     -webkit-overflow-scrolling: touch;
     margin: 0;
     padding: 0;
@@ -90,30 +90,31 @@
   h4 { font-size: clamp(1rem, 2vw, 1.25rem); line-height: 1.4; }
 
   input, select, textarea {
-    @apply focus:ring-2 focus:ring-[#2FE92B] focus:border-[#2FE92B] focus:outline-none;
+    @apply focus:ring-2 focus:ring-[#B96337] focus:border-[#B96337] focus:outline-none;
     min-height: 2.75rem;
   }
 
   .dark input:not([type=checkbox]):not([type=radio]),
   .dark select,
   .dark textarea {
-    background-color: #1B1B1D;
-    border-color: #26272D;
-    color: #F7F8F9;
+    background-color: #252821;
+    border-color: #403A34;
+    color: #F4EFE5;
   }
 
-  .dark hr { border-color: #26272D; }
+  .dark hr { border-color: #403A34; }
 }
 
 .glass-card {
-  background: rgba(255,255,255,0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid #26272D;
+  background: rgba(255,252,246,0.86);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid #DED5C6;
+  box-shadow: 0 24px 70px -38px rgba(54, 43, 31, 0.42);
 }
 .dark .glass-card {
-  background: rgba(24,25,29,0.88);
-  border: 1px solid #26272D;
+  background: rgba(34,39,32,0.88);
+  border: 1px solid #403A34;
 }
 
 @layer utilities {
@@ -156,19 +157,51 @@
 @media (min-width: 1024px) { .form-grid { grid-template-columns: repeat(3, 1fr); } }
 
 ::-webkit-scrollbar        { width: 5px; height: 5px; }
-::-webkit-scrollbar-track  { background: #1B1B1D; }
-.dark ::-webkit-scrollbar-track { background: #101114; }
-::-webkit-scrollbar-thumb  { background: #26272D; border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: #2FE92B; }
+::-webkit-scrollbar-track  { background: #EEE7DA; }
+.dark ::-webkit-scrollbar-track { background: #171915; }
+::-webkit-scrollbar-thumb  { background: #C7B9A3; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #A64E2E; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.animate-fadeIn { animation: fadeIn 0.2s ease-out both; }
+.animate-fadeIn { animation: fadeIn 0.42s cubic-bezier(.2,.75,.25,1) both; }
 
 @keyframes slideInLeft {
   from { opacity: 0; transform: translateX(-100%); }
   to   { opacity: 1; transform: translateX(0); }
 }
-.animate-slideInLeft { animation: slideInLeft 0.25s ease-out both; }
+.animate-slideInLeft { animation: slideInLeft 0.32s cubic-bezier(.2,.75,.25,1) both; }
+
+@keyframes autumnFloat {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-7deg); }
+  50% { transform: translate3d(0, -12px, 0) rotate(7deg); }
+}
+.autumn-float { animation: autumnFloat 7s ease-in-out infinite; }
+.autumn-float-delay { animation: autumnFloat 8.5s ease-in-out 1.2s infinite; }
+
+@keyframes softGlow {
+  0%, 100% { opacity: .36; transform: scale(.96); }
+  50% { opacity: .68; transform: scale(1.04); }
+}
+.autumn-glow { animation: softGlow 9s ease-in-out infinite; }
+
+button:not(:disabled) { transition-property: color, background-color, border-color, box-shadow, transform, scale; transition-duration: 180ms; }
+button:not(:disabled):active { scale: .98; }
+button:focus-visible, a:focus-visible {
+  outline: 3px solid rgba(185, 99, 55, .5);
+  outline-offset: 3px;
+}
+
+.bg-white { background-color: #FFFCF6; }
+.dark .bg-white { background-color: #222720; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
