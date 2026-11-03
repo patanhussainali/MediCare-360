@@ -34,7 +34,8 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [selectedRoleFilter, setSelectedRoleFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [error, setError] = useState('');
+  const [pageError, setPageError] = useState('');    // page-level banner errors
+  const [modalError, setModalError] = useState('');  // modal-level errors only
   const [successMsg, setSuccessMsg] = useState('');
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -67,20 +68,15 @@ const UserManagement = () => {
     try {
       const res = await userService.getAllUsers();
       setUsersList(res.data || []);
-      setError(''); // clear any previous error on success
+      setPageError(''); // clear any previous page-level error on success
     } catch (e) {
       console.error('Error fetching users:', e);
-      // Don't show a red banner for 401 — it means the token refresh is in progress
-      // or the session is being re-established. The interceptor handles redirect if needed.
       const status = e?.response?.status;
-      if (status === 401 || status === 403) {
-        // Silent fail — don't overwrite a success message with an auth error
-        return;
-      }
+      if (status === 401 || status === 403) return; // silent — interceptor handles session
       if (e?.response?.data?.detail) {
-        setError(e.response.data.detail);
+        setPageError(e.response.data.detail);
       } else if (e?.message && !e.message.includes('401')) {
-        setError(e.message);
+        setPageError(e.message);
       }
     } finally {
       setLoading(false);
@@ -118,28 +114,17 @@ const UserManagement = () => {
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
-    setError('');
+    setModalError('');
     setSuccessMsg('');
     try {
       await userService.createUser(createForm, currentUser);
       setSuccessMsg(`User ${createForm.name} created successfully with role ${createForm.role}.`);
       setIsCreateOpen(false);
-      setCreateForm({
-        name: '',
-        email: '',
-        password: '',
-        role: 'DOCTOR',
-        department: '',
-        phone: '',
-        status: 'Active',
-      });
-      // Small delay to allow backend to settle before re-fetching
-      setTimeout(() => {
-        fetchUsers();
-        refreshData();
-      }, 500);
+      setModalError('');
+      setCreateForm({ name: '', email: '', password: '', role: 'DOCTOR', department: '', phone: '', status: 'Active' });
+      setTimeout(() => { fetchUsers(); refreshData(); }, 500);
     } catch (err) {
-      setError(err.message || 'Failed to create user');
+      setModalError(err.message || 'Failed to create user');
     }
   };
 
@@ -154,13 +139,13 @@ const UserManagement = () => {
       department: validAssignments.includes(currentDept) ? currentDept : (currentDept || ''),
       phone: user.phone || '',
     });
-    setError('');
+    setModalError('');
     setIsEditOpen(true);
   };
 
   const handleUpdateUser = async (e) => {
     e.preventDefault();
-    setError('');
+    setModalError('');
     setSuccessMsg('');
     try {
       await userService.updateUser(selectedUser.id, editForm, currentUser);
@@ -169,20 +154,20 @@ const UserManagement = () => {
       fetchUsers();
       refreshData();
     } catch (err) {
-      setError(err.message || 'Failed to update user');
+      setModalError(err.message || 'Failed to update user');
     }
   };
 
   const openResetPassModal = (user) => {
     setSelectedUser(user);
     setNewPassword('');
-    setError('');
+    setModalError('');
     setIsResetPassOpen(true);
   };
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    setError('');
+    setModalError('');
     setSuccessMsg('');
     try {
       await userService.resetUserPassword(selectedUser.id, newPassword, currentUser);
@@ -191,12 +176,12 @@ const UserManagement = () => {
       setNewPassword('');
       fetchUsers();
     } catch (err) {
-      setError(err.message || 'Failed to reset password');
+      setModalError(err.message || 'Failed to reset password');
     }
   };
 
   const handleToggleStatus = async (user) => {
-    setError('');
+    setPageError('');
     setSuccessMsg('');
     try {
       const nextStatus = user.status === 'Active' ? 'Inactive' : 'Active';
@@ -205,7 +190,7 @@ const UserManagement = () => {
       fetchUsers();
       refreshData();
     } catch (err) {
-      setError(err.message || 'Failed to change status');
+      setPageError(err.message || 'Failed to change status');
     }
   };
 
@@ -217,7 +202,7 @@ const UserManagement = () => {
         fetchUsers();
         refreshData();
       } catch (err) {
-        setError(err.message || 'Failed to delete user');
+        setPageError(err.message || 'Failed to delete user');
       }
     }
   };
@@ -370,7 +355,7 @@ const UserManagement = () => {
           </button>
           <button
             onClick={() => {
-              setError('');
+              setModalError('');
               setIsCreateOpen(true);
             }}
             className="px-4 py-2.5 bg-hospital-600 hover:bg-hospital-700 text-white font-bold text-xs rounded-xl shadow-soft flex items-center gap-2 transition-all"
@@ -391,13 +376,13 @@ const UserManagement = () => {
         </div>
       )}
 
-      {error && (
+      {pageError && (
         <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 rounded-2xl text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-rose-600" />
-            <span>{error}</span>
+            <span>{pageError}</span>
           </div>
-          <button onClick={() => setError('')} className="text-rose-600 hover:text-rose-900 font-bold">Dismiss</button>
+          <button onClick={() => setPageError('')} className="text-rose-600 hover:text-rose-900 font-bold">Dismiss</button>
         </div>
       )}
 
@@ -493,7 +478,7 @@ const UserManagement = () => {
       {/* ── MODAL 1: Create New User ── */}
       <Modal
         isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
+        onClose={() => { setIsCreateOpen(false); setModalError(''); }}
         title="Create New User Account (Assign Role & Credentials)"
         maxWidth="max-w-2xl"
         footer={
@@ -516,10 +501,10 @@ const UserManagement = () => {
         }
       >
         <form id="createUserForm" onSubmit={handleCreateUser} className="space-y-4 text-xs">
-          {error && (
+          {modalError && (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
+              <span>{modalError}</span>
             </div>
           )}
 
@@ -678,10 +663,10 @@ const UserManagement = () => {
         }
       >
         <form id="editUserForm" onSubmit={handleUpdateUser} className="space-y-4 text-xs">
-          {error && (
+          {modalError && (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
+              <span>{modalError}</span>
             </div>
           )}
 
@@ -791,10 +776,10 @@ const UserManagement = () => {
         }
       >
         <form id="resetPassForm" onSubmit={handleResetPassword} className="space-y-4 text-xs">
-          {error && (
+          {modalError && (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
+              <span>{modalError}</span>
             </div>
           )}
 
