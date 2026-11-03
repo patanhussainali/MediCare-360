@@ -1,25 +1,21 @@
 import React, { useState } from 'react';
-import { Pill, CheckCircle2, Eye } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Pill, CheckCircle2, Eye, ReceiptText } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import Table from '../../components/common/Table';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
-import { prescriptionService } from '../../services/prescriptionService';
 import { formatDate } from '../../utils/formatters';
 
 const PharmacistPrescriptions = () => {
-  const { currentUser } = useAuth();
-  const { prescriptions, refreshData } = useData();
+  const { prescriptions } = useData();
+  const navigate = useNavigate();
   const [detailRx, setDetailRx] = useState(null);
 
-  const handleDispense = async (id) => {
-    try {
-      await prescriptionService.updateStatus(id, 'Dispensed', currentUser);
-      await refreshData();
-    } catch (err) {
-      alert(err.message || 'Failed to update prescription status');
-    }
+  const openBilling = prescription => {
+    navigate('/pharmacist/dispense-billing', {
+      state: { patientId: prescription.patientId, prescriptionId: prescription.id },
+    });
   };
 
   const columns = [
@@ -68,15 +64,17 @@ const PharmacistPrescriptions = () => {
           </button>
           {(r.status === 'Pending' || r.status === 'Active') ? (
             <button
-              onClick={() => handleDispense(r.id)}
+              onClick={() => openBilling(r)}
               className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-soft flex items-center gap-1 whitespace-nowrap"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" /> Dispense
+              <ReceiptText className="w-3.5 h-3.5" /> Dispense / Bill
+            </button>
+          ) : r.status === 'Dispensed' ? (
+            <button onClick={() => openBilling(r)} className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center gap-1 whitespace-nowrap dark:bg-slate-700 dark:text-slate-200">
+              <ReceiptText className="w-3.5 h-3.5" /> Review Billing
             </button>
           ) : (
-            <span className="text-xs text-emerald-600 font-bold px-2 py-1 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
-              Dispensed
-            </span>
+            <span className="text-xs text-slate-500 font-bold px-2 py-1 rounded-lg">{r.status}</span>
           )}
         </div>
       )
@@ -151,13 +149,13 @@ const PharmacistPrescriptions = () => {
               </div>
             </div>
 
-            {(detailRx.status === 'Pending' || detailRx.status === 'Active') && (
+            {detailRx.status !== 'Cancelled' && (
               <div className="flex justify-end pt-2">
                 <button
-                  onClick={() => { handleDispense(detailRx.id); setDetailRx(null); }}
+                  onClick={() => { openBilling(detailRx); setDetailRx(null); }}
                   className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-soft flex items-center gap-2"
                 >
-                  <CheckCircle2 className="w-4 h-4" /> Mark as Dispensed
+                  <CheckCircle2 className="w-4 h-4" /> {detailRx.status === 'Dispensed' ? 'Review Billing' : 'Continue to Dispense / Billing'}
                 </button>
               </div>
             )}
