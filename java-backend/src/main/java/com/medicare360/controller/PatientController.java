@@ -53,7 +53,7 @@ public class PatientController {
     }
 
     @GetMapping("/me")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('PATIENT')")
     public ResponseEntity<PatientResponse> getMyProfile(@AuthenticationPrincipal UserPrincipal principal) {
         if (principal == null) {
             throw new ResourceNotFoundException("Not authenticated");

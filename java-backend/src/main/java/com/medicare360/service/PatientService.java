@@ -73,10 +73,25 @@ public class PatientService {
         return toResponse(patient);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public PatientResponse getByUserId(Long userId) {
-        Patient patient = patientRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Patient profile not found for user"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User account not found"));
+        if (user.getRole() != UserRole.PATIENT) {
+            throw new ResourceNotFoundException("Patient profile not found for user");
+        }
+
+        Patient patient = patientRepository.findByUserId(userId).orElse(null);
+        if (patient == null && user.getEmail() != null && !user.getEmail().isBlank()) {
+            Patient matchingPatient = patientRepository.findByEmailIgnoreCase(user.getEmail()).orElse(null);
+            if (matchingPatient != null && matchingPatient.getUser() == null) {
+                matchingPatient.setUser(user);
+                patient = patientRepository.save(matchingPatient);
+            }
+        }
+        if (patient == null) {
+            throw new ResourceNotFoundException("Patient profile not found for this account. Please contact the hospital to link your profile.");
+        }
         return toResponse(patient);
     }
 

@@ -8,34 +8,48 @@ import { axiosInstance } from './apiClient.js';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/storage.js';
 import { logAuditEvent } from './auditService.js';
 
+const normalizePatient = p => ({
+  id: p.id,
+  dbId: p.id,
+  patientId: p.patient_id || p.patientId || `PAT-${p.id}`,
+  userId: p.user_id ?? p.userId,
+  name: p.full_name || p.fullName || p.name,
+  email: p.email,
+  phone: p.phone,
+  gender: p.gender,
+  dateOfBirth: p.date_of_birth || p.dateOfBirth,
+  bloodGroup: p.blood_group || p.bloodGroup,
+  address: p.address,
+  emergencyContact: p.emergency_contact || p.emergencyContact,
+  allergies: p.allergies ? (Array.isArray(p.allergies) ? p.allergies : [p.allergies]) : [],
+  chronicConditions: p.chronic_conditions || p.chronicConditions
+    ? (Array.isArray(p.chronic_conditions || p.chronicConditions)
+      ? (p.chronic_conditions || p.chronicConditions)
+      : [p.chronic_conditions || p.chronicConditions])
+    : [],
+  status: p.status || 'Active',
+  registeredAt: p.created_at || p.createdAt || new Date().toISOString(),
+});
+
 export const patientService = {
   async getAllPatients() {
     try {
       const response = await axiosInstance.get('/patients');
-      const pats = response.data || [];
-      const normalized = pats.map(p => ({
-        id: p.id,                              // numeric DB primary key — used for API calls
-        dbId: p.id,                            // alias kept for backward compat
-        patientId: p.patient_id || `PAT-${p.id}`,  // MRN string — display only
-        userId: p.user_id,
-        name: p.full_name || p.name,
-        email: p.email,
-        phone: p.phone,
-        gender: p.gender,
-        dateOfBirth: p.date_of_birth,
-        bloodGroup: p.blood_group,
-        address: p.address,
-        emergencyContact: p.emergency_contact,
-        allergies: p.allergies ? (Array.isArray(p.allergies) ? p.allergies : [p.allergies]) : [],
-        chronicConditions: p.chronic_conditions ? (Array.isArray(p.chronic_conditions) ? p.chronic_conditions : [p.chronic_conditions]) : [],
-        status: p.status || 'Active',
-        registeredAt: p.created_at || new Date().toISOString(),
-      }));
+      const normalized = (response.data || []).map(normalizePatient);
       setItem(STORAGE_KEYS.PATIENTS, normalized);
       return { success: true, data: normalized };
     } catch (err) {
       const local = getItem(STORAGE_KEYS.PATIENTS, []);
       return { success: true, data: local };
+    }
+  },
+
+  async getMyProfile() {
+    try {
+      const response = await axiosInstance.get('/patients/me');
+      return { success: true, data: normalizePatient(response.data) };
+    } catch (err) {
+      throw new Error(err?.response?.data?.detail || err.message || 'Unable to load your patient profile.');
     }
   },
 

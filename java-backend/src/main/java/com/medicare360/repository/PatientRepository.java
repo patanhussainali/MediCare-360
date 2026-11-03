@@ -16,6 +16,8 @@ public interface PatientRepository extends JpaRepository<Patient, Long>, JpaSpec
 
     Optional<Patient> findByPatientId(String patientId);
 
+    Optional<Patient> findByEmailIgnoreCase(String email);
+
     Optional<Patient> findFirstByUserIdOrderByIdDesc(Long userId);
 
     default Optional<Patient> findByUserId(Long userId) {

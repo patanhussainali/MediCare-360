@@ -4,12 +4,13 @@ import { Calendar, Clock, Stethoscope, CheckCircle2, AlertCircle } from 'lucide-
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { appointmentService } from '../../services/appointmentService';
+import { patientService } from '../../services/patientService';
 import { DEFAULT_DEPARTMENTS } from '../../utils/storage';
 import { formatCurrency } from '../../utils/formatters';
 
 const BookAppointment = () => {
   const { currentUser } = useAuth();
-  const { patients, doctors, departments, refreshData } = useData();
+  const { doctors, departments, refreshData } = useData();
   const navigate = useNavigate();
 
   const [selectedDepartment, setSelectedDepartment] = useState('');
@@ -58,16 +59,8 @@ const BookAppointment = () => {
     setLoading(true);
     try {
       const selectedDoc = doctors.find(d => String(d.id) === String(selectedDoctorId));
-      const patient = patients.find(p =>
-        String(p.userId) === String(currentUser?.id) ||
-        String(p.id) === String(currentUser?.profileId) ||
-        p.patientId === currentUser?.profileId
-      );
-
-      if (!patient?.id) {
-        setError('Your patient record could not be found. Please contact the hospital to link your patient profile.');
-        return;
-      }
+      const { data: patient } = await patientService.getMyProfile();
+      if (!patient?.id) throw new Error('Your patient profile is not linked to this account. Please contact the hospital.');
 
       const res = await appointmentService.bookAppointment({
         patientId: patient.id,
