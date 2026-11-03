@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/authService';
-import { initializeStorage } from '../utils/storage';
+import { initializeStorage, removeItem, STORAGE_KEYS } from '../utils/storage';
 
 const AuthContext = createContext(null);
 
@@ -15,7 +15,16 @@ export const AuthProvider = ({ children }) => {
 
     // Restore session from localStorage cache (populated on login from backend response)
     const storedUser = authService.getCurrentUser();
-    setCurrentUser(storedUser);
+    const storedToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    const isLegacyPreviewSession = storedUser?.isDemo || storedToken?.includes('demo_jwt_token_');
+    if (isLegacyPreviewSession) {
+      removeItem(STORAGE_KEYS.CURRENT_USER);
+      removeItem(STORAGE_KEYS.TOKEN);
+      removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      setCurrentUser(null);
+    } else {
+      setCurrentUser(storedUser);
+    }
 
     // Check backend for admin existence (drives first-run setup UI)
     const adminCheck = await authService.checkAdminStatus();

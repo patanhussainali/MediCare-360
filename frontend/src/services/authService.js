@@ -126,30 +126,13 @@ export const authService = {
       );
       const isBackendUnreachable = !err?.response || err?.code === 'ERR_NETWORK' || isNetlifyHtml404;
 
-      // If deployed on Netlify without live backend URL, provide preview/demo access so user is never locked out
+      // Never create a local demo session in production. It cannot authenticate to
+      // protected backend endpoints and leaves users with a misleading 401 later.
       if (isDeployed && isBackendUnreachable) {
-        console.warn('Backend API unreachable or not connected (404/Network). Proceeding in Preview Mode.');
-        const cleanEmail = email.trim().toLowerCase();
-        const roleUpper = (selectedRole || 'ADMIN').toUpperCase();
-        const namePart = cleanEmail.split('@')[0];
-        const formattedName = roleUpper === 'DOCTOR'
-          ? `Dr. ${namePart.charAt(0).toUpperCase() + namePart.slice(1)}`
-          : (namePart.charAt(0).toUpperCase() + namePart.slice(1));
-        const mockToken = `demo_jwt_token_${Date.now()}`;
-        const userSession = {
-          id: cleanEmail === 'sivashankar5824@gmail.com' ? 2 : 1,
-          name: formattedName,
-          email: cleanEmail,
-          role: roleUpper,
-          department: roleUpper === 'DOCTOR' ? 'Cardiology' : 'Hospital Administration',
-          profileId: roleUpper === 'DOCTOR' ? 'DOC-001' : null,
-          status: 'Active',
-          isDemo: true,
-        };
-        setItem(STORAGE_KEYS.CURRENT_USER, userSession);
-        setItem(STORAGE_KEYS.TOKEN, mockToken);
-        logAuditEvent('DEMO_LOGIN', `User authenticated in Preview Mode (${roleUpper})`, 1, formattedName);
-        return { success: true, data: { user: userSession, token: mockToken } };
+        removeItem(STORAGE_KEYS.CURRENT_USER);
+        removeItem(STORAGE_KEYS.TOKEN);
+        removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        throw new Error('Cannot reach the live backend. Please check the backend deployment and try signing in again.');
       }
 
       throw new Error(err?.response?.data?.detail || err.message || 'Login failed');

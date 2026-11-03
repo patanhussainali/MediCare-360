@@ -82,8 +82,22 @@ export const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use((config) => {
   config.baseURL = getApiBaseUrl();
   const token = getItem(STORAGE_KEYS.TOKEN, null);
+  const isPublicAuthRequest = /\/auth\/(login|login\/form|setup-admin|register|refresh|check-admin)/.test(config.url || '');
+  if (typeof token === 'string' && token.startsWith('demo_jwt_token_')) {
+    removeItem(STORAGE_KEYS.CURRENT_USER);
+    removeItem(STORAGE_KEYS.TOKEN);
+    removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    if (!isPublicAuthRequest && typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
+    if (!isPublicAuthRequest) {
+      return Promise.reject(new Error('This preview session cannot access the live backend. Please sign in again.'));
+    }
+  }
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    if (!(typeof token === 'string' && token.startsWith('demo_jwt_token_'))) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 }, (error) => Promise.reject(error));
@@ -106,6 +120,7 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const isDeployed = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    const isPublicAuthRequest = /\/auth\/(login|login\/form|setup-admin|register|refresh|check-admin)/.test(originalRequest?.url || '');
 
     // Auto-refresh on 401 (token expired)
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -151,6 +166,17 @@ axiosInstance.interceptors.response.use(
         } finally {
           isRefreshing = false;
         }
+      }
+    }
+
+    // If no refresh token exists, do not leave the user in a portal with a
+    // rejected session. Clear the stale credentials and return to sign-in.
+    if (error.response?.status === 401 && !isPublicAuthRequest) {
+      removeItem(STORAGE_KEYS.CURRENT_USER);
+      removeItem(STORAGE_KEYS.TOKEN);
+      removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = '/login';
       }
     }
 
