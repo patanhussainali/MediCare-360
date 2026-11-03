@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Search, Pill, ReceiptText } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
@@ -55,6 +55,7 @@ const DispenseBilling = () => {
     });
   }, [medicines, quantities, selectedPrescription]);
   const subtotal = lines.reduce((sum, line) => sum + line.amount, 0);
+  const unpricedLines = lines.filter(line => !line.medicine || !(line.unitPrice > 0));
 
   const choosePatient = async selected => {
     setPatientId(String(selected.id));
@@ -91,7 +92,7 @@ const DispenseBilling = () => {
     setError('');
     if (!patient || !selectedPrescription || !lines.length) return setError('Select a patient and prescription.');
     if (prescriptionInvoice) return setError('An invoice has already been issued for this prescription.');
-    if (lines.some(line => !line.medicine)) return setError('Add every prescribed medicine to inventory so its price can be verified.');
+    if (unpricedLines.length) return setError(`Add ${unpricedLines.map(line => line.name).join(', ')} to inventory and set a price before billing.`);
     if (lines.some(line => !Number.isInteger(line.quantity) || line.quantity < 1)) return setError('Enter the quantity dispensed for every medicine.');
     if (!alreadyDispensed && lines.some(line => line.quantity > Number(line.medicine.stockQuantity || 0))) return setError('Requested quantity exceeds available stock.');
 
@@ -179,14 +180,15 @@ const DispenseBilling = () => {
             <p className="text-xs text-slate-500">Prescribed by {selectedPrescription.doctorName || 'Attending doctor'} · {selectedPrescription.diagnosis}</p>
             {alreadyDispensed && !prescriptionInvoice && <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800">This prescription was marked dispensed before billing. Enter the quantities actually handed to the patient; this creates an invoice only and will not change stock.</p>}
             {prescriptionInvoice && <p className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800">An invoice is already linked to this prescription. It is shown below.</p>}
+            {unpricedLines.length > 0 && <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800">{unpricedLines.map(line => line.name).join(', ')} {unpricedLines.length === 1 ? 'is' : 'are'} missing from inventory or has no price. Add the medicine and its unit price before dispensing or billing. <Link to="/pharmacist/inventory" className="ml-1 font-bold underline">Open Medicine Inventory</Link></p>}
             {lines.map(line => <div key={line.index} className="grid grid-cols-[1fr_70px_auto] items-center gap-2 rounded-xl border border-slate-200 p-3 text-xs dark:border-slate-700">
               <div><p className="font-bold"><Pill className="mr-1 inline h-3.5 w-3.5" />{line.name}</p><p className="text-slate-500">{line.dosage} · {line.medicine ? alreadyDispensed ? 'Previously dispensed' : `Stock ${line.medicine.stockQuantity}` : 'Not in inventory'}</p></div>
               <input type="number" min="1" max={alreadyDispensed ? undefined : line.medicine?.stockQuantity || 1} value={quantities[line.index] ?? (alreadyDispensed ? '' : 1)} onChange={event => setQuantities({ ...quantities, [line.index]: event.target.value })} aria-label={`Quantity for ${line.name}`} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 dark:border-slate-700 dark:bg-slate-900" />
-              <span className="text-right font-bold">{formatCurrency(line.amount)}</span>
+              <span className="text-right font-bold">{line.unitPrice > 0 ? formatCurrency(line.amount) : 'Price unavailable'}</span>
             </div>)}
-            <div className="flex items-center justify-between border-t pt-3 text-sm font-bold"><span>Medicine subtotal</span><span>{formatCurrency(subtotal)}</span></div>
+            <div className="flex items-center justify-between border-t pt-3 text-sm font-bold"><span>Medicine subtotal</span><span>{unpricedLines.length ? '—' : formatCurrency(subtotal)}</span></div>
             <p className="text-[11px] text-slate-400">5% tax is added to the stored invoice.</p>
-            <button type="button" disabled={busy || !lines.length || Boolean(prescriptionInvoice)} onClick={handleCreateInvoice} className="w-full rounded-xl bg-hospital-600 py-3 text-sm font-bold text-white disabled:opacity-50"><ReceiptText className="mr-2 inline h-4 w-4" />{busy ? 'Processing…' : prescriptionInvoice ? 'Invoice Already Issued' : alreadyDispensed ? 'Generate Invoice' : 'Dispense & Generate Invoice'}</button>
+            <button type="button" disabled={busy || !lines.length || unpricedLines.length > 0 || Boolean(prescriptionInvoice)} onClick={handleCreateInvoice} className="w-full rounded-xl bg-hospital-600 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"><ReceiptText className="mr-2 inline h-4 w-4" />{busy ? 'Processing…' : prescriptionInvoice ? 'Invoice Already Issued' : unpricedLines.length ? 'Resolve Inventory Pricing First' : alreadyDispensed ? 'Generate Invoice' : 'Dispense & Generate Invoice'}</button>
           </div>}
           {patient && !patientPrescriptions.length && <p className="mt-4 text-xs text-slate-500">No prescriptions found for this patient.</p>}
         </div>
