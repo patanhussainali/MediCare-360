@@ -43,7 +43,7 @@ export const authService = {
       // Store only safe, non-sensitive session info (never password or hash)
       const userSession = {
         id: user.id,
-        userCode: user.user_code || user.userCode || user.id,
+        userCode: user.user_code || user.userCode || '',
         name: user.full_name,
         email: user.email,
         role: user.role,          // Role from backend/database — never from client input

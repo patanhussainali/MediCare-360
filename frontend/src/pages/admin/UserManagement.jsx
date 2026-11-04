@@ -231,7 +231,7 @@ const UserManagement = () => {
     {
       header: 'User ID',
       accessor: 'userCode',
-      render: (r) => <span className="font-mono text-xs text-slate-500">{r.userCode || r.id}</span>
+      render: (r) => <span className="font-mono text-xs text-slate-500">{r.userCode || 'Pending assignment'}</span>
     },
     {
       header: 'Full Name',

@@ -85,14 +85,14 @@ export default function PatientQuickSearch() {
               <UserRound className="mt-0.5 h-4 w-4 shrink-0 text-hospital-600" />
               <span className="min-w-0">
                 <span className="block truncate text-xs font-semibold text-slate-800 dark:text-white">{patient.name}</span>
-                <span className="block truncate text-[10px] text-slate-500">{patient.userCode || patient.patientId} · {patient.phone || 'No mobile'}</span>
+                <span className="block truncate text-[10px] text-slate-500">{patient.userCode || 'User ID pending'} · {patient.phone || 'No mobile'}</span>
               </span>
             </button>
           ))}
           {selectedPatient && (
             <div className="m-1 rounded-lg border border-slate-200 bg-slate-50 p-3 text-[11px] dark:border-slate-700 dark:bg-slate-900">
               <p className="font-bold text-slate-800 dark:text-white">{selectedPatient.name}</p>
-              <p className="mt-1 text-slate-500">User ID: {selectedPatient.userCode || 'Legacy account'} · Patient ID: {selectedPatient.patientId}</p>
+              <p className="mt-1 text-slate-500">User ID: {selectedPatient.userCode || 'Pending assignment'} · Patient ID: {selectedPatient.patientId}</p>
               <p className="text-slate-500">Mobile: {selectedPatient.phone || 'Not provided'} · Blood group: {selectedPatient.bloodGroup || 'Not recorded'}</p>
             </div>
           )}

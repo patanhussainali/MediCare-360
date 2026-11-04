@@ -55,7 +55,7 @@ const DoctorProfile = () => {
           </div>
           <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-700">
             <span className="text-slate-400 font-medium">User ID</span>
-            <p className="text-sm font-bold font-mono text-slate-800 dark:text-white mt-1">{currentUser?.userCode || currentUser?.id}</p>
+            <p className="text-sm font-bold font-mono text-slate-800 dark:text-white mt-1">{currentUser?.userCode || 'Pending assignment'}</p>
           </div>
         </div>
       </div>
