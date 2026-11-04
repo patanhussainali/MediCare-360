@@ -2,16 +2,28 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Activity, Mail, CheckCircle2, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { axiosInstance } from '../../services/apiClient';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    setError('');
+    setLoading(true);
+    try {
+      await axiosInstance.post('/auth/forgot-password', { email: email.trim().toLowerCase() });
+      setSubmitted(true);
+    } catch (requestError) {
+      setError(requestError?.response?.data?.detail || 'We could not send the reset email right now. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -70,6 +82,7 @@ const ForgotPassword = () => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{error}</div>}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Registered Email</label>
                 <div className="relative">
@@ -79,9 +92,9 @@ const ForgotPassword = () => {
                     className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-hospital-500/20 focus:border-hospital-500 placeholder-slate-400 transition-colors" />
                 </div>
               </div>
-              <button type="submit"
-                className="w-full py-3 bg-hospital-600 hover:bg-deep-forest text-white font-bold text-sm rounded-xl shadow-soft transition-all">
-                Send Reset Link
+              <button type="submit" disabled={loading}
+                className="w-full py-3 bg-hospital-600 hover:bg-deep-forest disabled:opacity-60 text-white font-bold text-sm rounded-xl shadow-soft transition-all">
+                {loading ? 'Sending…' : 'Send Reset Link'}
               </button>
               <div className="text-center">
                 <Link to="/login" className="text-xs text-hospital-600 dark:text-hospital-400 hover:underline font-semibold">

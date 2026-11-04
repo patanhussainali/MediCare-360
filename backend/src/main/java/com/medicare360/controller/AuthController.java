@@ -6,6 +6,7 @@ import com.medicare360.exception.ResourceNotFoundException;
 import com.medicare360.repository.UserRepository;
 import com.medicare360.security.UserPrincipal;
 import com.medicare360.service.AuthService;
+import com.medicare360.service.PasswordRecoveryService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
@@ -22,10 +23,13 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserRepository userRepository;
+    private final PasswordRecoveryService passwordRecoveryService;
 
-    public AuthController(AuthService authService, UserRepository userRepository) {
+    public AuthController(AuthService authService, UserRepository userRepository,
+                          PasswordRecoveryService passwordRecoveryService) {
         this.authService = authService;
         this.userRepository = userRepository;
+        this.passwordRecoveryService = passwordRecoveryService;
     }
 
     @PostMapping("/register")
@@ -78,6 +82,18 @@ public class AuthController {
     public ResponseEntity<TokenResponse> refresh(@RequestBody RefreshTokenRequest req) {
         TokenResponse token = authService.refreshToken(req.getRefreshToken());
         return ResponseEntity.ok(token);
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {
+        passwordRecoveryService.requestReset(req.getEmail());
+        return ResponseEntity.ok(Map.of("message", "If an account exists for that email, reset instructions have been sent."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+        passwordRecoveryService.resetPassword(req);
+        return ResponseEntity.ok(Map.of("message", "Password updated. You can now sign in."));
     }
 
     @PostMapping("/logout")

@@ -54,3 +54,13 @@ MediCare-360/
 5. In **Site Configuration** → **Environment variables**, set:
    - `VITE_API_URL` = `https://your-railway-url.up.railway.app/api/v1`
 6. Click **Deploy Site**.
+
+## 3. Password Reset Email (Resend)
+
+Password recovery is sent by the Java backend through Resend. Create a Resend account, verify the sending domain/address, then add these variables to the backend service environment (Render/Railway):
+
+- `RESEND_API_KEY` = your Resend API key (keep it secret; set it only on the backend)
+- `MAIL_FROM` = a sender address verified with Resend, for example `MediCare360 <no-reply@your-verified-domain>`
+- `FRONTEND_URL` = `https://medplus360.netlify.app` (the site that hosts `/reset-password`)
+
+Redeploy the backend after setting the variables. The reset link expires after 30 minutes and can be used once. The forgot-password screen only reports that instructions were sent after the backend accepted the request; if email delivery is not configured or Resend rejects the sender, it shows a delivery error instead.

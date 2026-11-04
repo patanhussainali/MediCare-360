@@ -65,7 +65,7 @@ const Modal = ({ isOpen, onClose, title, description, children, footer, formLayo
   const widthClass = MAX_WIDTHS[maxWidth] || maxWidth || 'max-w-xl';
   const layoutClass = formLayout
     ? 'flex h-[min(800px,calc(100dvh-2rem))] flex-col'
-    : `grid grid-rows-[auto_minmax(0,1fr)_auto] ${footer ? 'h-[95dvh] sm:h-[90vh]' : 'h-fit'}`;
+    : `grid grid-rows-[auto_minmax(0,1fr)_auto] h-fit ${footer ? 'max-h-[calc(100dvh-2rem)]' : ''}`;
 
   return (
     <div

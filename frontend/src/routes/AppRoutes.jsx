@@ -14,6 +14,7 @@ import Contact from '../pages/public/Contact';
 import Login from '../pages/public/Login';
 import Register from '../pages/public/Register';
 import ForgotPassword from '../pages/public/ForgotPassword';
+import ResetPassword from '../pages/public/ResetPassword';
 
 // Patient Pages
 import PatientDashboard from '../pages/patient/PatientDashboard';
@@ -91,6 +92,7 @@ const AppRoutes = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/initial-admin-setup" element={<Navigate to="/login" replace />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Patient Portal Routes */}
       <Route element={<ProtectedRoute allowedRoles={['PATIENT']}><MainLayout /></ProtectedRoute>}>
