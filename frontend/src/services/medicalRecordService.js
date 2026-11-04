@@ -80,14 +80,16 @@ export const medicalRecordService = {
   },
 
   async createRecord(recordData, currentUser) {
-    const patientId = Number(recordData.patientId);
+    // MongoDB IDs are opaque strings (usually 24 hex characters), not numbers.
+    // Preserve the ID exactly as returned by the patients API.
+    const patientId = String(recordData.patientId ?? '').trim();
     if (!patientId) throw new Error('Select a valid patient record.');
 
     const cachedDoctors = getItem(STORAGE_KEYS.DOCTORS, []);
     const ownDoctor = cachedDoctors.find(doctor =>
       String(doctor.userId) === String(currentUser?.id) || String(doctor.id) === String(currentUser?.profileId)
     );
-    const doctorId = Number(recordData.doctorId || ownDoctor?.id);
+    const doctorId = String(recordData.doctorId || ownDoctor?.id || '').trim();
     const isReferral = recordData.recordType === 'LAB_REFERRAL';
     const referralData = isReferral ? {
       kind: 'LAB_REFERRAL',
