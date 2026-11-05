@@ -16,6 +16,7 @@ MediCare-360 implements strict Role-Based Access Control (RBAC) across 6 dedicat
 4. **Receptionist:** Patient registration, appointment booking, doctor availability tracking, and intake billing.
 5. **Pharmacist:** Medicine inventory, stock tracking, and prescription dispensing.
 6. **Patient:** Appointment self-booking, personal health records, electronic prescriptions, and billing statements.
+7. **Lab Technician:** Viewing doctor-ordered test requests, sample collection tracking, test result entry, and lab report upload and release.
 
 ---
 
