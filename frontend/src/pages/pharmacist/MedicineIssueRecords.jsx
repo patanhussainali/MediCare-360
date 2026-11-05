@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import Table from '../../components/common/Table';
 import Modal from '../../components/common/Modal';
+import PatientSearchSelect from '../../components/common/PatientSearchSelect';
 import { pharmacyService } from '../../services/pharmacyService';
 import { formatDate } from '../../utils/formatters';
 
@@ -134,14 +135,14 @@ const MedicineIssueRecords = () => {
           </div>
 
           <div>
-            <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Patient *</label>
-            <select required value={form.patientId} onChange={e => setForm({ ...form, patientId: e.target.value })}
-              className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
-              <option value="">— Select Patient —</option>
-              {patients.map(p => (
-                <option key={p.id} value={p.id}>{p.name || p.full_name} ({p.patientId || p.id})</option>
-              ))}
-            </select>
+            <label htmlFor="medicine-issue-patient" className="mb-1 block font-bold text-slate-700 dark:text-slate-300">Patient *</label>
+            <PatientSearchSelect
+              inputId="medicine-issue-patient"
+              patients={patients}
+              value={form.patientId}
+              onChange={patientId => setForm({ ...form, patientId })}
+              placeholder="Search patient by name, ID, or mobile…"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

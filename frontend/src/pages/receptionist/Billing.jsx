@@ -5,6 +5,7 @@ import { useData } from '../../context/DataContext';
 import Table from '../../components/common/Table';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
+import PatientSearchSelect from '../../components/common/PatientSearchSelect';
 import { billingService } from '../../services/billingService';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 
@@ -182,14 +183,8 @@ const ReceptionistBilling = () => {
           )}
 
           <div>
-            <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Select Patient *</label>
-            <select required value={patientId} onChange={e => setPatientId(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
-              <option value="">— Choose Patient —</option>
-              {patients.map(p => (
-                <option key={p.id} value={p.id}>{p.name || p.full_name} ({p.patientId || p.id})</option>
-              ))}
-            </select>
+            <label htmlFor="billing-patient" className="mb-1 block font-bold text-slate-700 dark:text-slate-300">Select Patient *</label>
+            <PatientSearchSelect inputId="billing-patient" patients={patients} value={patientId} onChange={setPatientId} placeholder="Search patient by name, ID, or mobile…" />
           </div>
 
           <div>

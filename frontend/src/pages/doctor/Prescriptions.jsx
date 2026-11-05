@@ -5,6 +5,7 @@ import { useData } from '../../context/DataContext';
 import Table from '../../components/common/Table';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
+import PatientSearchSelect from '../../components/common/PatientSearchSelect';
 import { prescriptionService } from '../../services/prescriptionService';
 import { formatDate } from '../../utils/formatters';
 import { axiosInstance } from '../../services/apiClient.js';
@@ -243,20 +244,7 @@ const DoctorPrescriptions = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Target Patient *</label>
-              <select required value={selectedPatientId} onChange={e => setSelectedPatientId(e.target.value)}
-                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm">
-                <option value="">— Select Patient —</option>
-                {patients.map(p => {
-                  // Preserve the MongoDB document ID as a string for the backend.
-                  const patientDocumentId = p.dbId || p.id;
-                  const displayMrn = p.patientId || p.patient_id || p.id;
-                  return (
-                    <option key={patientDocumentId} value={patientDocumentId}>
-                      {p.name || p.full_name} ({displayMrn})
-                    </option>
-                  );
-                })}
-              </select>
+              <PatientSearchSelect inputId="prescription-patient" patients={patients} value={selectedPatientId} onChange={setSelectedPatientId} placeholder="Search patient by name, ID, or mobile…" className="text-sm" />
             </div>
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Diagnosis / Chief Complaint *</label>

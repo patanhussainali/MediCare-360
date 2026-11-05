@@ -5,6 +5,7 @@ import { useData } from '../../context/DataContext';
 import Table from '../../components/common/Table';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
+import PatientSearchSelect from '../../components/common/PatientSearchSelect';
 import { appointmentService } from '../../services/appointmentService';
 import { formatDate } from '../../utils/formatters';
 
@@ -85,18 +86,8 @@ const AppointmentManagement = () => {
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Book Walk-in Patient Appointment">
         <form onSubmit={handleBook} className="space-y-4 text-xs">
           <div>
-            <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Select Patient</label>
-            <select
-              required
-              value={patientId}
-              onChange={e => setPatientId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border rounded-xl"
-            >
-              <option value="">-- Choose Patient --</option>
-              {patients.map(p => (
-                <option key={p.id} value={p.id}>{p.name} ({p.patientId || p.id})</option>
-              ))}
-            </select>
+            <label htmlFor="walk-in-patient" className="mb-1 block font-bold text-slate-700 dark:text-slate-300">Select Patient</label>
+            <PatientSearchSelect inputId="walk-in-patient" patients={patients} value={patientId} onChange={setPatientId} placeholder="Search patient by name, ID, or mobile…" />
           </div>
 
           <div>

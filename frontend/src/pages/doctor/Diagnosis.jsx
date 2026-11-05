@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import Table from '../../components/common/Table';
 import Modal from '../../components/common/Modal';
+import PatientSearchSelect from '../../components/common/PatientSearchSelect';
 import { medicalRecordService } from '../../services/medicalRecordService';
 import { formatDate } from '../../utils/formatters';
 
@@ -153,7 +154,7 @@ const Diagnosis = () => {
       <Modal isOpen={referralOpen} onClose={() => setReferralOpen(false)} title="Assign Patient to Lab" maxWidth="max-w-xl">
         <form onSubmit={handleCreateReferral} className="space-y-4 text-sm">
           {referralError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{referralError}</div>}
-          <div><label className="mb-1 block text-xs font-bold">Patient</label><select required value={referral.patientId} onChange={event => setReferral({ ...referral, patientId: event.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900"><option value="">Select patient</option>{patients.map(patient => <option key={patient.id} value={patient.id}>{patient.name} · {patient.patientId || patient.id}</option>)}</select></div>
+          <div><label htmlFor="lab-referral-patient" className="mb-1 block text-xs font-bold">Patient</label><PatientSearchSelect inputId="lab-referral-patient" patients={patients} value={referral.patientId} onChange={patientId => setReferral({ ...referral, patientId })} placeholder="Search patient by name, ID, or mobile…" /></div>
           <fieldset><legend className="mb-2 text-xs font-bold">Tests to perform</legend><div className="grid grid-cols-2 gap-2">{['Blood Test', 'Complete Blood Count (CBC)', 'Blood Glucose', 'Urine Test', 'X-ray', 'ECG', 'Lipid Profile', 'Liver Function Test'].map(test => <label key={test} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2.5 text-xs dark:border-slate-700"><input type="checkbox" checked={referral.tests.includes(test)} onChange={event => setReferral({ ...referral, tests: event.target.checked ? [...referral.tests, test] : referral.tests.filter(item => item !== test) })} />{test}</label>)}</div></fieldset>
           <div><label className="mb-1 block text-xs font-bold">Clinical notes</label><textarea rows="3" value={referral.notes} onChange={event => setReferral({ ...referral, notes: event.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-900" /></div>
           <button type="submit" disabled={referralLoading} className="w-full rounded-xl bg-cyan-700 py-3 text-sm font-bold text-white disabled:opacity-50">{referralLoading ? 'Sending referral…' : 'Send to Lab Technician'}</button>
@@ -184,19 +185,16 @@ const Diagnosis = () => {
           <section className="space-y-2" aria-labelledby="patient-info-heading">
             <h4 id="patient-info-heading" className="text-sm font-bold text-slate-800 dark:text-white">Patient Information</h4>
             <label htmlFor="diagnosis-patient" className="block font-semibold text-slate-700 dark:text-slate-300">Select Registered Patient <span className="text-rose-600">*</span></label>
-            <select
-              id="diagnosis-patient"
-              aria-invalid={Boolean(formErrors.patientId)}
-              aria-describedby={formErrors.patientId ? 'diagnosis-patient-error' : undefined}
+            <PatientSearchSelect
+              inputId="diagnosis-patient"
+              patients={patients}
               value={form.patientId}
-              onChange={e => { setForm({ ...form, patientId: e.target.value }); setFormErrors({ ...formErrors, patientId: '' }); }}
-              className={`w-full rounded-xl border bg-slate-50 px-4 py-3 text-sm dark:bg-slate-900 ${formErrors.patientId ? 'border-rose-500' : 'border-slate-200 dark:border-slate-700'}`}
-            >
-              <option value="">-- Choose Registered Patient --</option>
-              {patients.map(p => (
-                <option key={p.id} value={p.id}>{p.name} ({p.patientId || p.id}) - DOB: {p.dateOfBirth || 'N/A'}</option>
-              ))}
-            </select>
+              onChange={patientId => { setForm({ ...form, patientId }); setFormErrors({ ...formErrors, patientId: '' }); }}
+              ariaInvalid={Boolean(formErrors.patientId)}
+              ariaDescribedBy={formErrors.patientId ? 'diagnosis-patient-error' : undefined}
+              placeholder="Search patient by name, ID, or mobile…"
+              className={formErrors.patientId ? 'border-rose-500' : 'px-4 py-3'}
+            />
             {formErrors.patientId && <p id="diagnosis-patient-error" className="text-xs text-rose-600">{formErrors.patientId}</p>}
           </section>
 
