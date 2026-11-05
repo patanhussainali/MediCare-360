@@ -44,7 +44,8 @@ const AssignedPatients = () => {
   };
 
   const columns = [
-    { header: 'Patient ID', accessor: 'id' },
+    // Keep the MongoDB primary key internal; show the human-facing patient code.
+    { header: 'Patient ID', render: (patient) => patient.userCode || patient.patientId || 'N/A' },
     { header: 'Name', accessor: 'name' },
     { header: 'Blood Group', render: (r) => <span className="font-bold text-rose-600">{r.bloodGroup || 'O+'}</span> },
     { header: 'Gender', accessor: 'gender' },
