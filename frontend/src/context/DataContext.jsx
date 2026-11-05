@@ -26,6 +26,7 @@ export const DataProvider = ({ children }) => {
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [medicalRecordError, setMedicalRecordError] = useState('');
   const refreshInFlightRef = useRef(null);
+  const refreshQueuedRef = useRef(false);
   const medicalRecordRefreshRef = useRef(null);
   const [prescriptions, setPrescriptions] = useState([]);
   const [medicines, setMedicines] = useState([]);
@@ -98,17 +99,29 @@ export const DataProvider = ({ children }) => {
     }
   }, []);
 
-  const fetchAllData = useCallback(async () => {
-    if (refreshInFlightRef.current) return refreshInFlightRef.current;
-    loadLocalData();
+  const runBackendSync = useCallback(() => {
+    if (refreshInFlightRef.current) return;
+
     const request = syncBackendData();
     refreshInFlightRef.current = request;
-    try {
-      await request;
-    } finally {
+    const finishRefresh = () => {
       if (refreshInFlightRef.current === request) refreshInFlightRef.current = null;
-    }
-  }, [loadLocalData, syncBackendData]);
+      if (refreshQueuedRef.current) {
+        refreshQueuedRef.current = false;
+        runBackendSync();
+      }
+    };
+    request.then(finishRefresh, finishRefresh);
+  }, [syncBackendData]);
+
+  const fetchAllData = useCallback(() => {
+    // Refresh visible data from the local cache immediately. Network sync runs
+    // in the background so forms do not keep users waiting on unrelated lists.
+    loadLocalData();
+    if (refreshInFlightRef.current) refreshQueuedRef.current = true;
+    else runBackendSync();
+    return Promise.resolve();
+  }, [loadLocalData, runBackendSync]);
 
   const refreshMedicalRecords = useCallback(async () => {
     if (medicalRecordRefreshRef.current) return medicalRecordRefreshRef.current;

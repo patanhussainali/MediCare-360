@@ -75,7 +75,9 @@ export const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000,
+  // Render Free instances can take about a minute to wake after idle. Let the
+  // first request finish instead of aborting it at 15 seconds.
+  timeout: 75000,
 });
 
 // Interceptor to ensure dynamic baseURL is always current and attach auth token
@@ -185,16 +187,16 @@ axiosInstance.interceptors.response.use(
 
     if (error.code === 'ECONNABORTED' || (error.message && error.message.toLowerCase().includes('timeout'))) {
       error.message = isDeployed
-        ? 'The backend server took too long to respond. Please check your deployed Railway service.'
+        ? 'The Render backend took too long to respond. It may be starting after idle; wait a minute and try again if this continues.'
         : 'The server took too long to respond. Please ensure the Java backend is running at http://127.0.0.1:8080.';
     } else if (error.code === 'ERR_NETWORK' || !error.response) {
       error.message = isDeployed
-        ? 'Cannot reach live backend API. Connect your Railway backend URL via VITE_API_BASE_URL in Netlify site settings.'
+        ? 'Cannot reach the live backend API. Check that the Render service is running and Netlify VITE_API_BASE_URL points to its URL.'
         : 'Unable to reach the backend server. Please verify the Java backend is running at http://127.0.0.1:8080.';
     } else if (error.response?.status === 404 && isDeployed) {
       const isHtmlResponse = typeof error.response.data === 'string' && error.response.data.includes('<!DOCTYPE');
       if (isHtmlResponse || !error.response.data?.detail) {
-        error.message = 'Live backend is not connected. The request reached Netlify instead of Railway (404). Configure your Railway backend URL in Netlify settings or via the API settings on the login page.';
+        error.message = 'Live backend is not connected. The request reached Netlify instead of the backend (404). Set Netlify VITE_API_BASE_URL to your Render service URL ending in /api/v1.';
       }
     }
     return Promise.reject(error);

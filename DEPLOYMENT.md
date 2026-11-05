@@ -1,66 +1,40 @@
-# MediCare360 Deployment Guide
+# MediCare360 deployment
 
-This guide covers deploying the **Frontend** to **Netlify** and the **Java Spring Boot Backend** to **Railway** / container hosting.
+The frontend is hosted on Netlify. The Java Spring Boot API is hosted on Render and stores application data in MongoDB Atlas.
 
----
+## Render backend
 
-## Repository Structure
+Create or update a Render **Web Service** connected to this repository with:
 
-```
-MediCare-360/
-├── frontend/          ← Netlify deploys this directory
-│   ├── netlify.toml   ← Netlify build & redirect config
-│   └── ...
-├── java-backend/      ← Railway / Docker deploys this directory (Java 21 Spring Boot)
-│   ├── pom.xml        ← Maven configuration
-│   ├── src/           ← Spring Boot source code
-│   └── ...
-├── data/              ← SQLite persistent data directory
-│   └── medicare360.db
-└── database/          ← Database schema & migration history
-    └── migrations/
-```
+- Runtime: **Docker**
+- Root directory: repository root (leave blank)
+- Dockerfile path: `backend/Dockerfile`
+- Health check path: `/health`
 
----
+Configure these variables in the Render service environment:
 
-## 1. Backend Deployment (Railway)
+- `MONGODB_URI` = MongoDB Atlas connection string
+- `MONGODB_DATABASE` = `medicare360` (or the database name you use)
+- `JWT_SECRET_KEY` = a unique, random secret of at least 32 characters
+- `CORS_ALLOWED_ORIGINS` = `https://medplus360.netlify.app`
+- `RESEND_API_KEY` = Resend API key (optional; needed for password reset email)
+- `MAIL_FROM` = sender address on a Resend verified domain (optional; needed for password reset email)
+- `FRONTEND_URL` = `https://medplus360.netlify.app`
 
-### Steps:
-1. Log in to [Railway](https://railway.app/).
-2. Click **+ New Project** → **Deploy from GitHub repo**.
-3. Select your repository.
-4. In the service **Settings** → **Root Directory**, set it to `java-backend` (or use the root `railway.toml`).
-5. In **Variables** (Environment Variables), configure:
-   - `JWT_SECRET_KEY` = `generate-a-strong-random-secret-key-32-chars-minimum`
-   - `CORS_ALLOWED_ORIGINS` = `https://your-frontend.netlify.app`
-   - `PORT` = `8000` (or Railway dynamic port)
-6. Click **Deploy**.
-7. In **Settings** → **Networking**, click **Generate Domain** (e.g. `https://medicare-backend-production.up.railway.app`).
-8. Test that your backend is up by opening:
-   - `https://your-railway-url.up.railway.app/health` → `{"status": "healthy", "service": "medicare360", "version": "1.0.0"}`
+Render supplies `PORT`; the Docker start command passes it to Spring Boot. Do not set a separate fixed port. After changing variables, redeploy the service and confirm `https://<your-render-service>.onrender.com/health` returns a healthy response.
 
----
+## Netlify frontend
 
-## 2. Frontend Deployment (Netlify)
+In the Netlify site environment, set:
 
-### Steps:
-1. Log in to [Netlify](https://app.netlify.com/).
-2. Click **Add new site** → **Import an existing project** → **GitHub**.
-3. Select your repository.
-4. Netlify will detect `netlify.toml`:
-   - Base directory: `frontend`
-   - Build command: `npm run build`
-   - Publish directory: `frontend/dist`
-5. In **Site Configuration** → **Environment variables**, set:
-   - `VITE_API_URL` = `https://your-railway-url.up.railway.app/api/v1`
-6. Click **Deploy Site**.
+- `VITE_API_BASE_URL` = `https://<your-render-service>.onrender.com/api/v1`
 
-## 3. Password Reset Email (Resend)
+Trigger a new Netlify deploy after changing this value. The frontend API client also reads a saved runtime override from browser local storage, which takes precedence over the Netlify build variable. If the site still calls an old backend URL, clear the site's `VITE_API_BASE_URL` and `API_BASE_URL` local storage entries and reload.
 
-Password recovery is sent by the Java backend through Resend. Create a Resend account, verify the sending domain/address, then add these variables to the backend service environment (Render/Railway):
+## Response time
 
-- `RESEND_API_KEY` = your Resend API key (keep it secret; set it only on the backend)
-- `MAIL_FROM` = a sender address verified with Resend, for example `MediCare360 <no-reply@your-verified-domain>`
-- `FRONTEND_URL` = `https://medplus360.netlify.app` (the site that hosts `/reset-password`)
+The frontend renders cached data first and refreshes backend lists in the background, so saving a form does not wait for unrelated list requests. Render Free web services can sleep after inactivity and take about a minute to start again. The client now allows up to 75 seconds for a backend request to accommodate that startup. For consistently fast logins and saves, use an always-on Render plan. Keep MongoDB Atlas in a region close to the Render service to reduce database round-trip time.
 
-Redeploy the backend after setting the variables. The reset link expires after 30 minutes and can be used once. The forgot-password screen only reports that instructions were sent after the backend accepted the request; if email delivery is not configured or Resend rejects the sender, it shows a delivery error instead.
+## Password reset email
+
+Password recovery is sent through Resend. Verify the sending domain in Resend, set `RESEND_API_KEY` and `MAIL_FROM` in Render, then redeploy. Reset links point to the frontend and expire after 30 minutes.
