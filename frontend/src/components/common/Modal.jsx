@@ -64,12 +64,16 @@ const Modal = ({ isOpen, onClose, title, description, children, footer, formLayo
 
   const widthClass = MAX_WIDTHS[maxWidth] || maxWidth || 'max-w-xl';
   const layoutClass = formLayout
-    ? 'flex h-[min(800px,calc(100dvh-2rem))] flex-col'
+    ? 'flex h-[calc(100dvh-2rem)] max-h-[800px] min-h-0 flex-col'
     : `grid grid-rows-[auto_minmax(0,1fr)_auto] h-fit ${footer ? 'max-h-[calc(100dvh-2rem)]' : ''}`;
+  const overlayClass = formLayout
+    ? 'fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-hidden animate-fadeIn'
+    : 'fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-slate-900/60 backdrop-blur-sm overflow-y-auto overscroll-contain animate-fadeIn';
+  const viewportHeightClass = formLayout ? '' : 'max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-3rem)]';
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-slate-900/60 backdrop-blur-sm overflow-y-auto overscroll-contain animate-fadeIn"
+      className={overlayClass}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
@@ -79,7 +83,7 @@ const Modal = ({ isOpen, onClose, title, description, children, footer, formLayo
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
-        className={`bg-white dark:bg-slate-800 shadow-2xl border border-slate-200/90 dark:border-slate-700 w-full ${widthClass} rounded-2xl sm:rounded-3xl ${layoutClass} max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-3rem)] overflow-hidden transition-all duration-300`}
+        className={`bg-white dark:bg-slate-800 shadow-2xl border border-slate-200/90 dark:border-slate-700 w-full ${widthClass} rounded-2xl sm:rounded-3xl ${layoutClass} ${viewportHeightClass} overflow-hidden transition-all duration-300`}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-slate-100 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/80 shrink-0">
