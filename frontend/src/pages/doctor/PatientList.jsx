@@ -7,7 +7,7 @@ const PatientList = () => {
   const { patients } = useData();
 
   const columns = [
-    { header: 'Patient ID', accessor: 'id' },
+    { header: 'Patient User ID', render: (r) => <span className="font-mono">{r.userCode || 'Pending assignment'}</span> },
     { header: 'Full Name', accessor: 'name' },
     { header: 'Email', accessor: 'email' },
     { header: 'Phone', accessor: 'phone' },

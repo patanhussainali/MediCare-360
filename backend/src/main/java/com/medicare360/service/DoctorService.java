@@ -161,6 +161,9 @@ public class DoctorService {
         res.setId(doc.getId());
         res.setDoctorId(doc.getDoctorId());
         res.setUserId(doc.getUserId());
+        if (doc.getUserId() != null) {
+            userRepository.findById(doc.getUserId()).ifPresent(user -> res.setUserCode(user.getUserCode()));
+        }
         res.setFullName(doc.getFullName());
         res.setSpecialization(doc.getSpecialization());
         res.setQualification(doc.getQualification());

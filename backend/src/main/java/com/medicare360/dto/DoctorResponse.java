@@ -17,6 +17,8 @@ public class DoctorResponse {
 
     private String userId;
 
+    private String userCode;
+
     private String fullName;
 
     private String specialization;

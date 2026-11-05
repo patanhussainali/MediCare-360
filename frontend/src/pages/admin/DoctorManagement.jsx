@@ -63,7 +63,7 @@ const DoctorManagement = () => {
   };
 
   const columns = [
-    { header: 'ID', accessor: 'id' },
+    { header: 'User ID', render: (r) => <span className="font-mono">{r.userCode || 'Pending assignment'}</span> },
     { header: 'Doctor Name', render: (r) => <span className="font-bold">{r.name}</span> },
     { header: 'Email Login', accessor: 'email' },
     { header: 'Department', accessor: 'department' },

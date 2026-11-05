@@ -54,7 +54,7 @@ const PatientManagement = () => {
   };
 
   const columns = [
-    { header: 'Medical ID', accessor: 'id' },
+    { header: 'User ID', render: (r) => <span className="font-mono">{r.userCode || 'Pending assignment'}</span> },
     { header: 'Patient Name', render: (r) => <span className="font-bold">{r.name}</span> },
     { header: 'Email Login', accessor: 'email' },
     { header: 'Phone', accessor: 'phone' },

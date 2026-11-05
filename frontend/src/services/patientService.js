@@ -102,6 +102,7 @@ export const patientService = {
         dbId: created.id,
         patientId: created.patient_id || `PAT-${created.id}`,  // MRN display
         userId: created.user_id,
+        userCode: created.user_code || created.userCode || '',
         name: created.full_name || patientData.name,
         email: cleanEmail,
         phone: payload.phone,
