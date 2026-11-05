@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HeartPulse, PlusCircle, Activity } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import Table from '../../components/common/Table';
@@ -11,6 +11,9 @@ const AssignedPatients = () => {
   const { patients, medicalRecords, appointments, refreshData } = useData();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const [recordedPatientIds, setRecordedPatientIds] = useState(() => new Set());
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [vitals, setVitals] = useState({
     bloodPressure: '120/80 mmHg',
@@ -24,6 +27,8 @@ const AssignedPatients = () => {
     e.preventDefault();
     if (!selectedPatient) return;
 
+    setIsSaving(true);
+    setFeedback(null);
     try {
       await medicalRecordService.createRecord({
         patientId: selectedPatient.id,
@@ -35,11 +40,15 @@ const AssignedPatients = () => {
         treatmentPlan: vitals.notes
       }, currentUser);
 
-      refreshData();
-      alert(`Vitals recorded for ${selectedPatient.name}`);
+      const patientId = String(selectedPatient.id);
+      setRecordedPatientIds(previous => new Set(previous).add(patientId));
       setIsOpen(false);
+      setFeedback({ type: 'success', message: `Vitals recorded for ${selectedPatient.name}.` });
+      refreshData().catch(() => {});
     } catch (err) {
-      alert(err.message || 'Error recording vitals');
+      setFeedback({ type: 'error', message: err.message || 'Error recording vitals.' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -55,12 +64,15 @@ const AssignedPatients = () => {
       render: (r) => (
         <button
           onClick={() => {
+            setFeedback(null);
             setSelectedPatient(r);
             setIsOpen(true);
           }}
           className="px-3 py-1.5 bg-hospital-600 text-white font-bold text-xs rounded-xl hover:bg-hospital-700"
         >
-          Record Vitals
+          {recordedPatientIds.has(String(r.id)) || medicalRecords.some(record =>
+            String(record.patientId) === String(r.id) && record.diagnosis === 'Routine Nursing Vitals Log'
+          ) ? 'Record Again' : 'Record Vitals'}
         </button>
       )
     }
@@ -72,6 +84,17 @@ const AssignedPatients = () => {
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Assigned Patients & Vitals Log</h2>
         <p className="text-xs text-slate-400">Record nursing assessments, vital signs, and ward notes</p>
       </div>
+
+      {feedback && (
+        <div role="status" className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold ${
+          feedback.type === 'success'
+            ? 'border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950/40 dark:text-green-300'
+            : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300'
+        }`}>
+          {feedback.type === 'success' && <CheckCircle2 size={18} aria-hidden="true" />}
+          {feedback.message}
+        </div>
+      )}
 
       <Table
         columns={columns}
@@ -138,9 +161,10 @@ const AssignedPatients = () => {
 
             <button
               type="submit"
+              disabled={isSaving}
               className="w-full py-3 bg-hospital-600 text-white font-bold text-sm rounded-xl"
             >
-              Save Vitals Log
+              {isSaving ? 'Saving Vitals…' : 'Save Vitals Log'}
             </button>
           </form>
         </Modal>
