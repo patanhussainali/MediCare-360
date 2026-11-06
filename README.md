@@ -63,12 +63,9 @@ To run the automated API and RBAC test suite against the running backend:
 powershell -ExecutionPolicy Bypass -File test-api-suite.ps1
 ```
 
----
 
 `````
 ## 📄 License
 
 ````
 ## This project is licensed under the MIT License.
-
-
